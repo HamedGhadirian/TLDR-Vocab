@@ -211,9 +211,11 @@ for path in ["", "../Vocab.ahk", "lib/../../x.ahk", "C:\Windows\x.dll", "\\serve
 release := Map("version", "1.2.0", "assets", [
     Map("name", "manifest.json", "url", RepoUrl "/releases/download/v1.2.0/manifest.json"),
     Map("name", "a.zip", "url", "https://evil.example/HamedPhixer/TLDR-Vocab/releases/download/v1.2.0/a.zip"),
-    Map("name", "b.zip", "url", RepoUrl "/releases/download/v1.1.0/b.zip")])
+    Map("name", "b.zip", "url", RepoUrl "/releases/download/v1.1.0/b.zip"),
+    Map("name", "old.zip", "url", "https://github.com/HamedPhixer/TLDR-Vocab/releases/download/v1.2.0/old.zip")])
 CheckTrue("install: its own release's file", IsObject(Install.Asset(release, "manifest.json")))
 Check("install: not from another address", Install.Asset(release, "a.zip"), "")
+CheckTrue("install: the account's old name too", IsObject(Install.Asset(release, "old.zip")))
 Check("install: not from another version", Install.Asset(release, "b.zip"), "")
 Check("install: not a file it does not have", Install.Asset(release, "c.zip"), "")
 

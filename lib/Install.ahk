@@ -36,7 +36,10 @@
 
 class Install {
     static Root := A_Temp "\TLDR-Vocab-update"
-    static Allowed := RepoUrl "/releases/download/"
+    ; The GitHub account was renamed (HamedPhixer -> HamedGhadirian, 2026-11),
+    ; so a release's files may come from either name - both are this repo.
+    static Allowed := [RepoUrl "/releases/download/"
+        , "https://github.com/HamedPhixer/TLDR-Vocab/releases/download/"]
     static g := "", notes := "", status := "", goLink := "", rel := "", busy := false
     static req := "", poller := "", step := "", dir := "", manAsset := "", zipAsset := "", kind := "", manifest := ""
     static ask := "", retried := false
@@ -173,8 +176,10 @@ class Install {
             return ""
         for a in rel["assets"]
             if (a["name"] = name) {
-                want := Install.Allowed "v" rel["version"] "/" name
-                return (a["url"] == want) ? a : ""
+                for base in Install.Allowed
+                    if (a["url"] == base "v" rel["version"] "/" name)
+                        return a
+                return ""
             }
         return ""
     }

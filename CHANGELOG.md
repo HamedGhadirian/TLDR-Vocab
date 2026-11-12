@@ -2,16 +2,20 @@
 
 Each version's notes. The release on GitHub is built from the section with its number.
 
+## 1.3.1 — 2026-11-12
+
+- **Update now works again.** The GitHub account behind TLDR Vocab was renamed, and the app refused the new download address. Copies older than this one can't update themselves to it: use **Download page** once.
+
 ## 1.3.0 — 2026-11-12
+
+<details>
+<summary><b>New</b> (5)</summary>
 
 - **Check my English** — select something you wrote and press **Ctrl + Win + `**. Gemini rewrites it the way a native speaker would say it, and the card shows what changed and why, one short line each.
 - **Natural or formal** — switch at the top of the card: everyday English, or the kind you'd write to your manager.
 - **A pattern to learn** — when a change teaches a phrase you can use again, **+ save** keeps it in your word list.
 - **Pinned cards stay in front**, even after you click the taskbar or another always-on-top window.
 - **"Look up again" really asks again** — Gemini models resting after a busy moment are asked too.
-
-<details>
-<summary>Everything that changed</summary>
 
 - Select a single word to ask "is this word right here?". Its sentence is read straight from the text box.
 - **copy** puts the rewrite on the clipboard. Your own text is never changed.

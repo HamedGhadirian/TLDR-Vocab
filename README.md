@@ -11,11 +11,11 @@ For Windows 10 and 11. English → Persian by default, or any of 18 other langua
 Arabic, Urdu, Turkish, Spanish, French, German, Italian, Portuguese, Dutch, Polish, Russian, Ukrainian,
 Hindi, Indonesian, Vietnamese, Chinese, Japanese and Korean.
 
-![A word looked up on a web page: meaning, pronunciation, the meaning that fits the sentence, and the translation](https://raw.githubusercontent.com/HamedPhixer/TLDR-Vocab/main/docs/images/word.png)
+![A word looked up on a web page: meaning, pronunciation, the meaning that fits the sentence, and the translation](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/word.png)
 
 ## Download
 
-From the [latest release](https://github.com/HamedPhixer/TLDR-Vocab/releases/latest):
+From the [latest release](https://github.com/HamedGhadirian/TLDR-Vocab/releases/latest):
 
 | File | For |
 |---|---|
@@ -41,11 +41,11 @@ All of them can be changed — or switched off — in Settings.
 
 **Translate a passage** — the sentences around the one you click, in plain English and in your language:
 
-![The Translate card: the sentences taken, the same thing in simple English, and the translation](https://raw.githubusercontent.com/HamedPhixer/TLDR-Vocab/main/docs/images/translate.png)
+![The Translate card: the sentences taken, the same thing in simple English, and the translation](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/translate.png)
 
 **Summary** — a whole block of text, shortened in both languages:
 
-![The Summary card: a paragraph in simple English, its translation, and what the screen reading actually read](https://raw.githubusercontent.com/HamedPhixer/TLDR-Vocab/main/docs/images/summary.png)
+![The Summary card: a paragraph in simple English, its translation, and what the screen reading actually read](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/summary.png)
 
 The selection and the box pick the card by length: a few words get the dictionary, a sentence or so
 gets Translate, anything longer gets Summary. Wrong guess? Click **TRANSLATE | SUMMARY** at the top
@@ -77,7 +77,7 @@ the text box (Windows' UI Automation, no screen reading), so the mouse does not 
 it in. **Win + F7** opens the list: search it, click a word to see everything kept for it, or type a word
 and press Enter to look it up online. The gear opens Settings.
 
-![The word list: saved words with their translations, and everything kept for the one picked](https://raw.githubusercontent.com/HamedPhixer/TLDR-Vocab/main/docs/images/wordlist.png)
+![The word list: saved words with their translations, and everything kept for the one picked](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/wordlist.png)
 
 ## Gemini (optional, free)
 
@@ -91,7 +91,7 @@ found it.
 
 Your key stays in `Vocab.ini` on your PC. It is never part of this repository or its downloads.
 
-![Settings: the language, the Gemini key, the proxy, and every key shown with a change button](https://raw.githubusercontent.com/HamedPhixer/TLDR-Vocab/main/docs/images/settings.png)
+![Settings: the language, the Gemini key, the proxy, and every key shown with a change button](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/settings.png)
 
 ## Where the answers come from
 
@@ -183,7 +183,7 @@ it again — about ten seconds. If anything goes wrong on the way, nothing is ch
 does not start, the old one is put back by itself. The version you had is kept in the **previous version**
 folder: to go back, copy what is in it over the TLDR Vocab folder.
 
-![The update window: what is new, with Update now, Download page and Not now](https://raw.githubusercontent.com/HamedPhixer/TLDR-Vocab/main/docs/images/update.png)
+![The update window: what is new, with Update now, Download page and Not now](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/update.png)
 
 **By hand**, if you prefer:
 
@@ -209,7 +209,7 @@ Written for AutoHotkey v2.0.
 
 ## Credits
 
-Design and direction: **HamedPhixer**. Code written with Claude (Anthropic), via Claude Code.
+Design and direction: **HamedGhadirian**. Code written with Claude (Anthropic), via Claude Code.
 
 Testing and feedback: [life2088](https://github.com/life2088) — thank you.
 
@@ -221,4 +221,4 @@ the GNU GPL v2 — see `AutoHotkey license.txt` in that zip, and its source at
 
 ## License
 
-[MIT](LICENSE) © 2026 HamedPhixer
+[MIT](LICENSE) © 2026 HamedGhadirian
