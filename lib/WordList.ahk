@@ -306,7 +306,7 @@ class Dict {
     static Again() {
         st := this.st
         if (st.kind = "lookup")
-            StartLookup(st.word, st.context, Dict, "", false, st.mode)
+            StartLookup(st.word, st.context, Dict, "", false, st.mode, false, true)
     }
 
     static Switch(mode, *) {

@@ -157,6 +157,12 @@ at `:` or `;` left Gemini half a sentence of context.
   Rejected: waiting 15 s on two Flash models before Flash-Lite — 30 s is the
   whole budget, so Flash-Lite would get no time at all. Asking every Flash
   on every lookup: when Google is busy they are slow together.
+- **"Look up again" / "check again" lifts the rests** (2026-10-24, the user's idea). A two-hour rest
+  meant a Check could only get Flash-Lite, and pressing "check again" got Flash-Lite again. Pressed by
+  hand, it now lifts every busy or slow rest first (AiTrack.Forgive), so the order is as if nothing had
+  rested; the card says "asking the resting models again". One that fails again rests again, so this is
+  one more try, not a loop. Out of the day's quota stays: it is sure to say no. Every mode, because
+  every card's "again" goes through Popup.Again or the word list's Again.
 - **Half-spaces in Gemini's Persian (1.2.3).** Flash-Lite sometimes writes a
   Latin letter where a half-space (ZWNJ) belongs, and now and then garbles a
   whole word into Latin and Persian letters. The app's decoding was checked
@@ -270,6 +276,24 @@ own. How it is built (the steps are at the top of `lib\Install.ahk`):
 
 ## Check my English (1.3.0)
 
+- **Rewrite first, then teach** (2026-10-29, the user's call). This replaces the "check, not a
+  rewrite" design below. Its limits — do not invent problems, keep their words, no rewrite, always
+  give a pattern when something changed — fought each other. Gemini made up mistakes and patterns to fill
+  the answer, and left real ones in long texts. A review of the 13 saved patterns found five with
+  problems, one of them ("I'm not sure about how much…") a wrong pattern. Now the prompt asks for what any
+  chat with an AI would give: "rewrite this so it is correct and natural", with no limits. Then it
+  explains each change ("what they wrote -> what you wrote: why"). The pattern comes only when a change
+  really teaches one. No verdict: the card says "Nothing to change" when the text comes back as it was.
+  "better" comes before "points" again: the points now explain a finished rewrite, and the word diff
+  shows what really changed.
+- **NATURAL | FORMAL** (same day, the user's idea): two modes, "check" and "formal", switched like
+  Translate | Summary and kept in ModeMemo, so switching back costs nothing. Natural is the default. A
+  switch while Gemini is still answering does not save that request: it was already sent.
+- **A testing log** (same day, temporary): every answer goes to `cache\checks.jsonl`, so the new prompt
+  can be judged on real checks. Taken out for the 1.3.0 release (2026-11-12).
+
+The first design, kept for its history:
+
 - **A check and a small lesson, not a fixer.** The user writes English as a second language; grammar is
   mostly fine, what they want is to sound like a native — "the most common, everyday way to say it".
   So: a verdict, a better version only when something changes, about three short points, and one
@@ -283,6 +307,18 @@ own. How it is built (the steps are at the top of `lib\Install.ahk`):
   another way — no lesson for the sake of one. The user left this call to me.
 - **It never replaces the text.** "copy" puts the better version on the clipboard; doing the fix yourself
   is the point.
+- **Points come before the better version** in the JSON (2026-10-24). With "better" first, Gemini wrote
+  the text, then listed a change it never made ("too much invested -> too invested" in WHY, the old words
+  still in the text). Now it lists the changes first and is told the better version must make every one.
+  Rarer, not impossible; an app-side check of "old -> new" points is the next step if it still happens.
+- **Unnatural counts as much as wrong** (2026-10-24, the user's call). "This is the type of no focus I'm
+  talking about" is grammatical but no native says it, and Gemini left it alone as "their style". These are
+  the mistakes the user most wants: a grammar slip you can see on a second read, an unnatural phrase you
+  never can, because there is nothing in your head to compare it with. Not a full rewrite, though: that
+  would change their voice and hide what was actually wrong.
+- **No count for the points** (same day, the user's call). "At most three" made Gemini drop changes; "a
+  long answer" would make it invent them. So neither: one point per change, as many as there are. The
+  card scrolls. Stray capitals (dictation) are fixed without a point.
 - **The changed words are found by the app** (a word diff, the longest common run), not marked by Gemini:
   models asked to mark their own edits mark some they did not make and miss others.
 - **One word selected reads its sentence from the text box,** not the screen — the user's idea: what you

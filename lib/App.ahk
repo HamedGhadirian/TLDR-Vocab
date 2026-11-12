@@ -141,7 +141,8 @@ NoticeClicked(wParam, lParam, *) {
 ; it - see Popup.Update().
 ; reuse = the Translate | Summary switch: a finished lookup of the same text in
 ; that mode is shown again instead of asked for again (see ModeMemo).
-StartLookup(word, context, view, anchor := "", ocr := false, mode := "word", reuse := false) {
+; again = "look up again" pressed by hand: resting models are asked too.
+StartLookup(word, context, view, anchor := "", ocr := false, mode := "word", reuse := false, again := false) {
     if (SpeakAuto && mode = "word" && StrLen(word) <= 40)
         Speak.Say(word)
     view.Begin(word, context, anchor, ocr, mode)
@@ -151,7 +152,7 @@ StartLookup(word, context, view, anchor := "", ocr := false, mode := "word", reu
         view.Update(lk)
         return
     }
-    lk := Lookup(word, context, ObjBindMethod(view, "Update"), mode)
+    lk := Lookup(word, context, ObjBindMethod(view, "Update"), mode, again)
     if (mode != "word")
         ModeMemo.Put(lk)
     view.Attach(lk)

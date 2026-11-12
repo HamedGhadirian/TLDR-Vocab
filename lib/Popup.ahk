@@ -22,6 +22,7 @@ global Popup := PopupCard()
 
 class PopupCard {
     static pinned := []             ; the cards pinned to the screen
+    static topper := ""             ; the timer that keeps them in front - PinnedToFront
 
     __New() {
         this.g := "", this.pane := "", this.st := "", this.anchor := "", this.visible := false
@@ -49,7 +50,7 @@ class PopupCard {
             , cut: IsObject(anchor) && anchor.HasProp("cut") && anchor.cut}     ; the text was too long - see Paragraph.ahk
         this.misread := ""
         this.anchor := anchor
-        this.Plan((mode = "paragraph" || mode = "check") ? PopWide : PopW)
+        this.Plan((mode = "paragraph" || IsCheck(mode)) ? PopWide : PopW)
         this.pane.Clear()
         this.Render()
     }
@@ -207,6 +208,9 @@ class PopupCard {
         this.isPinned := true
         SetTimer(this.closer, 0)
         PopupCard.pinned.Push(this)
+        if !PopupCard.topper
+            PopupCard.topper := ObjBindMethod(PopupCard, "PinnedToFront")
+        SetTimer(PopupCard.topper, 1000)
         if (Popup == this)
             Popup := PopupCard()
         this.Render()                           ; the pin becomes an x
@@ -214,11 +218,12 @@ class PopupCard {
 
     ; Run the whole lookup again, in place: same word, same sentence, same
     ; corner of the screen. Answers that arrived are cached and come back at
-    ; once; the ones that failed are asked for again.
+    ; once; the ones that failed are asked for again - Gemini models resting
+    ; for being busy or slow too (AiTrack.Forgive).
     Again() {
         st := this.st
         if st.HasProp("word")           ; the same kind of card again: a sentence stays a sentence
-            StartLookup(st.word, st.context, this, this.anchor, false, st.mode)
+            StartLookup(st.word, st.context, this, this.anchor, false, st.mode, false, true)
     }
 
     ; the Translate | Summary switch: same text, same place, the other card
@@ -247,6 +252,22 @@ class PopupCard {
         this.st.flash := ((res = "saved") ? "saved " : "updated ") Chr(0x2713)
         this.Render()
         Dict.Refresh()
+    }
+
+    ; Pinned cards back to the front of the always-on-top windows, once a second.
+    ; Always-on-top alone is not enough: clicking the taskbar, or another
+    ; always-on-top window, lifts that one above them - and a card never takes
+    ; focus, so a click on it could not bring it back. Never activates. Stops
+    ; with the last pinned card.
+    static PinnedToFront() {
+        if !PopupCard.pinned.Length {
+            SetTimer(PopupCard.topper, 0)
+            return
+        }
+        for card in PopupCard.pinned
+            if card.g
+                DllCall("SetWindowPos", "ptr", card.g.Hwnd, "ptr", -1       ; HWND_TOPMOST
+                    , "int", 0, "int", 0, "int", 0, "int", 0, "uint", 0x13)  ; NOSIZE|NOMOVE|NOACTIVATE
     }
 
     ; A pinned card is dragged by any part of it that is not a link: the click

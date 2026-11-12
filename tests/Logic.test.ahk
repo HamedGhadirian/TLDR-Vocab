@@ -525,6 +525,20 @@ t.Got(t.steps[1], day, "")
 CheckTrue("gemini: all out of quota - one try, not every model", t.done, "went on to " (t.steps.Length ? t.steps[1].model : "?"))
 CheckHas("gemini: ...and says until when", t.note, "free quota used up until " AiTrack.LocalTime(AiTrack.NextQuotaDay()))
 
+; "look up again" by hand: a busy model is asked first again; out of the day's quota still is not
+AiTrack.chain := ["gemini-3.7-flash", "gemini-3.5-flash-lite"]
+AiTrack.resting := Map("gemini-3.7-flash", DateAdd(A_NowUTC, 3600, "Seconds"))
+t := AiTrack({word: "bank", context: "", mode: "word"})
+Check("gemini: a busy Flash is skipped", t.steps[1].model, "gemini-3.5-flash-lite")
+t := AiTrack({word: "bank", context: "", mode: "word", again: true})
+Check("gemini: look up again - the busy Flash is asked", t.steps[1].model, "gemini-3.7-flash")
+CheckTrue("gemini: ...and says so", InStr(t.Waiting, "resting models again"), t.Waiting)
+AiTrack.resting := Map("gemini-3.7-flash", AiTrack.NextQuotaDay())
+t := AiTrack({word: "bank", context: "", mode: "word", again: true})
+Check("gemini: look up again - out of the day's quota stays last", t.steps[1].model, "gemini-3.5-flash-lite")
+AiTrack.chain := ["model-a", "model-b"]
+AiTrack.resting := Map("model-a", AiTrack.NextQuotaDay(), "model-b", AiTrack.NextQuotaDay())
+
 ; kept across a restart: today's list and the rests; yesterday's list is not
 AiTrack.SaveState()
 AiTrack.chain := "", AiTrack.listed := "", AiTrack.resting := Map(), AiTrack.loaded := false
@@ -607,22 +621,24 @@ Check("check: the sentence a word is in", SentenceAt("I went there. Me and him g
 
 lk := {word: "I am agree with you, but the price is very expensive.", context: "", mode: "check"}
 p := AiTrack.Prompt(lk)
-CheckHas("check prompt: a text", p, "Their text (a chat message", lk.word, "native speaker: the most common, everyday way"
-    , "do not invent problems", '"pattern_example"')
-CheckTrue("check prompt: ...not the word question", !InStr(p, "unsure about the word"))
+CheckHas("check prompt: a text", p, "Rewrite their text", "Their text:", lk.word, "colloquial, not formal"
+    , "why yours is better", '"pattern_example"')
+CheckTrue("check prompt: ...not the word question, no limits", !InStr(p, "unsure about the word") && !InStr(p, "do not"))
+CheckHas("check prompt: formal", AiTrack.Prompt({word: lk.word, context: "", mode: "formal"}), "formal or professional setting")
 p := AiTrack.Prompt({word: "goed", context: "Me and him goed home.", mode: "check"})
 CheckHas("check prompt: a word in its sentence", p, 'unsure about the word "goed" in this sentence they wrote', "Me and him goed home."
-    , "their sentence with the better word", "give the better word if not")
+    , "whether that word was right")
 CheckHas("check prompt: a word alone", AiTrack.Prompt({word: "goed", context: "", mode: "check"}), "sentence around it is not available")
-CheckTrue("check: no translator asked", !FaTrack({word: "I am agree.", query: "i am agree.", context: "", mode: "check"}).enabled)
+CheckTrue("check: no translator asked", !FaTrack({word: "I am agree.", query: "i am agree.", context: "", mode: "check"}).enabled
+    && !FaTrack({word: "I am agree.", query: "i am agree.", context: "", mode: "formal"}).enabled)
 
 CheckReply(j) => {text: Json.Dump(Map("candidates", [Map("content", Map("parts", [Map("text", j)]))]))}
-got := AiTrack.Answer("check", CheckReply('{"verdict": "Small", "better": "I agree with you.", "points": ["agree is a verb - no am", ""], "reader": "They agree.", "pattern": "I agree with you, but ...", "pattern_use": "to agree and add a doubt", "pattern_example": "I agree with you, but it is late."}'))
-Check("check answer: read", got ? got["verdict"] "|" got["better"] "|" got["points"].Length "|" got["pattern"] : "(none)"
-    , "small|I agree with you.|1|I agree with you, but ...")
-got := AiTrack.Answer("check", CheckReply('{"verdict": "perfect", "reader": "Fine."}'))
-Check("check answer: an unknown verdict is no verdict, missing keys are empty", got ? got["verdict"] "|" got["better"] "|" got["points"].Length : "(none)", "||0")
-Check("check answer: nothing usable", AiTrack.Answer("check", CheckReply('{"pattern": "x"}')), "")
+got := AiTrack.Answer("check", CheckReply('{"better": "I agree with you.", "points": ["am agree -> agree: agree is a verb", ""], "reader": "They agree.", "pattern": "I agree with you, but ...", "pattern_use": "to agree and add a doubt", "pattern_example": "I agree with you, but it is late."}'))
+Check("check answer: read", got ? got["better"] "|" got["points"].Length "|" got["pattern"] : "(none)"
+    , "I agree with you.|1|I agree with you, but ...")
+got := AiTrack.Answer("formal", CheckReply('{"better": "Fine."}'))
+Check("check answer: formal too, missing keys are empty", got ? got["better"] "|" got["points"].Length "|" got["reader"] : "(none)", "Fine.|0|")
+Check("check answer: nothing usable", AiTrack.Answer("check", CheckReply('{"pattern": "x", "reader": "y"}')), "")
 
 Marked(old, new) {
     s := ""
@@ -650,17 +666,20 @@ CardText(st) {
     return s
 }
 FakeLk(data, done := true) => {ai: {enabled: true, done: done, data: data, source: "Gemini test", note: "busy", Waiting: "asking Gemini..."}}
-ans := AiTrack.Answer("check", CheckReply('{"verdict": "wrong", "better": "He and I went home.", "points": ["went is the past of go"], "reader": "They went home.", "pattern": "He and I ...", "pattern_use": "you and another person", "pattern_example": "She and I met there."}'))
+ans := AiTrack.Answer("check", CheckReply('{"better": "He and I went home.", "points": ["goed -> went: went is the past of go"], "reader": "They went home.", "pattern": "He and I ...", "pattern_use": "you and another person", "pattern_example": "She and I met there."}'))
 st := {word: "Me and him goed home.", context: "", lk: FakeLk(ans), flash: "", mode: "check"}
 s := CardText(st)
-CheckHas("check card: a text", s, "Needs a fix", "BETTER VERSION", "copy", "WHY", "went is the past of go"
-    , "WHAT A READER UNDERSTANDS", "LEARN THIS", "He and I ...", "+ save", "YOU WROTE|Me and him goed home.", "Gemini test")
+CheckHas("check card: a text", s, "NATURAL|", "FORMAL|", "NATURAL VERSION", "copy", "WHAT CHANGED, AND WHY", "went is the past of go"
+    , "A READER MIGHT THINK", "LEARN THIS", "He and I ...", "+ save", "YOU WROTE|Me and him goed home.", "Gemini test")
+st.mode := "formal"
+CheckHas("check card: formal", CardText(st), "FORMAL VERSION")
+st.mode := "check"
 st.lk := FakeLk("", false)
 CheckHas("check card: while it waits", CardText(st), "CHECK MY ENGLISH", "asking Gemini...")
-ok := AiTrack.Answer("check", CheckReply('{"verdict": "correct", "better": "Me and him goed home.", "reader": "Fine.", "pattern": ""}'))
+ok := AiTrack.Answer("check", CheckReply('{"better": "Me and him goed home.", "points": [], "pattern": ""}'))
 st.lk := FakeLk(ok)
 s := CardText(st)
-CheckTrue("check card: correct - no better version, nothing to learn", InStr(s, "Correct") && !InStr(s, "BETTER VERSION") && !InStr(s, "LEARN THIS"), s)
+CheckTrue("check card: nothing changed - no new version, nothing to learn", InStr(s, "Nothing to change") && !InStr(s, "NATURAL VERSION") && !InStr(s, "LEARN THIS"), s)
 st := {word: "goed", context: "Me and him goed home.", lk: FakeLk(ans), flash: "", mode: "check"}
 s := CardText(st)
 CheckHas("check card: a word shows its sentence", s, "goed|", Chr(0x201C) "Me and him goed home." Chr(0x201D))

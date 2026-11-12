@@ -301,10 +301,11 @@ RenderSentence(g, W, st, owner) {
 ; other is a link that redoes the same text the other way - for when the
 ; guess by length was wrong. Returns where the next thing on the line can go.
 ; Inside the code the two stay "sentence" and "paragraph", which is what saved
-; records and Vocab.ini already say.
-ModeSwitch(g, f, st, owner) {
-    x := f.x
-    for m in [["sentence", "TRANSLATE"], ["paragraph", "SUMMARY"]] {
+; records and Vocab.ini already say. The check card passes its own two,
+; NATURAL | FORMAL, and where on the line they start.
+ModeSwitch(g, f, st, owner, modes := "", x := "") {
+    x := (x = "") ? f.x : x
+    for m in (modes ? modes : [["sentence", "TRANSLATE"], ["paragraph", "SUMMARY"]]) {
         on := (st.mode = m[1])
         g.SetFont("s7 Bold c" (on ? CBlue : CDim), FontUI)
         c := g.Add("Text", "x" x " y" (f.y + 6) " BackgroundTrans +0x80", m[2])

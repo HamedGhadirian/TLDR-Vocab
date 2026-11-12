@@ -208,7 +208,7 @@ Now() => FormatTime(, "yyyy-MM-dd HH:mm")
 BuildRecord(st) {
     if (st.HasProp("mode") && st.mode = "sentence")
         return SentenceRecord(st)
-    if (st.HasProp("mode") && st.mode = "check")
+    if (st.HasProp("mode") && IsCheck(st.mode))
         return PatternRecord(st)
     lk := st.lk
     ai := lk.ai.data, def := lk.def.data, fa := lk.fa.data

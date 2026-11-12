@@ -261,8 +261,11 @@ class Cache {
 class Lookup {
     static active := [], ticker := ""
 
-    __New(word, context, onUpdate, mode := "word") {
+    ; again: asked for by hand ("look up again"), so resting models get
+    ; another chance (AiTrack.Forgive)
+    __New(word, context, onUpdate, mode := "word", again := false) {
         this.word := word
+        this.again := again
         this.query := Lookup.Norm(word)
         this.context := context
         this.mode := mode               ; "word", or "sentence" - see Sentence.ahk
@@ -774,7 +777,7 @@ class DefTrack extends Track {
 ;--------------------------------------------------------------------------------
 class FaTrack extends Track {
     Start() {
-        if (this.lk.mode = "check") {           ; English about English - see Check.ahk
+        if IsCheck(this.lk.mode) {              ; English about English - see Check.ahk
             this.enabled := false, this.done := true
             return
         }
@@ -908,6 +911,11 @@ class AiTrack extends Track {
             this.done := true, this.note := "key rejected - check it in Settings"
             return
         }
+        ; "look up again" / "check again" pressed by hand: the busy and slow
+        ; rests are lifted, so those models get another chance. One that says
+        ; no again rests again. Out of the day's quota stays: it is sure to say no.
+        if (this.lk.HasProp("again") && this.lk.again && AiTrack.Forgive())
+            this.status := "asking the resting models again"
         this.models := AiTrack.Models()
         this.steps := this.models.Length ? [this.GenStep(this.models[1])] : [this.ListStep()]
         if (this.models.Length > 1 && AiTrack.IsResting(this.models[this.models.Length])) {
@@ -1005,6 +1013,18 @@ class AiTrack extends Track {
                 , "listed", AiTrack.listed, "order", AiTrack.Order, "resting", AiTrack.resting), " "))
         } catch as e
             VocabLog("saving gemini.json failed: " e.Message)
+    }
+
+    ; every rest lifted but the day's quota; true if there was one to lift
+    static Forgive() {
+        AiTrack.LoadState()
+        lifted := false, day := AiTrack.NextQuotaDay()
+        for m, till in AiTrack.resting.Clone()
+            if (AiTrack.IsResting(m) && till != day)
+                AiTrack.resting.Delete(m), lifted := true
+        if lifted
+            AiTrack.SaveState()
+        return lifted
     }
 
     static IsResting(m, till := "") {
@@ -1365,7 +1385,7 @@ class AiTrack extends Track {
         j := Json.Parse(SubStr(txt, a, b - a + 1))
         if !(j is Map)
             return ""
-        if (mode = "check")
+        if IsCheck(mode)
             return AiTrack.CheckAnswer(j)
         out := Map()
         keys := (mode = "sentence") ? ["fixed", "simple", "translation", "note"]
@@ -1386,60 +1406,57 @@ class AiTrack extends Track {
     ; Check my English (Check.ahk): every key always there, points a list
     static CheckAnswer(j) {
         out := Map()
-        for k in ["verdict", "better", "reader", "pattern", "pattern_use", "pattern_example"] {
+        for k in ["better", "reader", "pattern", "pattern_use", "pattern_example"] {
             v := Dig(j, k)
             out[k] := Trim(IsObject(v) ? "" : String(v))
         }
-        out["verdict"] := StrLower(out["verdict"])
-        if !HasVal(["correct", "small", "wrong"], out["verdict"])
-            out["verdict"] := ""
         pts := []
         for p in ((Dig(j, "points") is Array) ? j["points"] : [])
             if (!IsObject(p) && Trim(p) != "")
                 pts.Push(Trim(p))
         out["points"] := pts
-        return (out["verdict"] = "" && out["better"] = "" && out["reader"] = "") ? "" : out
+        return (out["better"] = "" && !pts.Length) ? "" : out
     }
 
-    ; One prompt for both cases, told which it is: a word the writer is unsure
-    ; of (with the sentence it is in, when there is one), or a text of theirs.
-    ; Agreed with the user before it was built (docs\decisions.md).
+    ; Rewrite first, teach after: Gemini rewrites the text the way it thinks
+    ; is right - natural (lk.mode "check") or formal ("formal") - and then
+    ; explains each change. Nothing tells it what not to change: the old
+    ; prompt's limits made it invent mistakes and patterns (docs\decisions.md).
     static CheckPrompt(lk) {
         word := (lk.context != "" || CountWords(lk.word) = 1)
         q := Chr(34)
-        p := "You help a native " Lang.PromptName() " speaker who writes in English as a second language."
-            . " They want a quick check and one small lesson, not a rewrite. They want to sound like a"
-            . " native speaker: the most common, everyday way to say it.`n`n"
+        how := (lk.mode = "formal")
+            ? "formal: the way a native speaker would write it in a formal or professional setting, like an email to a manager, a client or a teacher"
+            : "natural: the way a native speaker would naturally say it in everyday conversation or chat - colloquial, not formal"
+        p := "You help a native " Lang.PromptName() " speaker who writes in English as a second language.`n`n"
         if !word
-            p .= "Their text (a chat message, an email or a post):`n" q lk.word q "`n`n"
+            p .= "Rewrite their text so it is correct and " how ". Fix grammar, word choice and idioms - change"
+                . " whatever you think should change. Keep what they mean and their line breaks.`n`n"
+                . "Their text:`n" q lk.word q "`n`n"
         else if (lk.context != "")
-            p .= "They are unsure about the word " q lk.word q " in this sentence they wrote:`n" q lk.context q "`n`n"
+            p .= "They are unsure about the word " q lk.word q " in this sentence they wrote. Rewrite the sentence"
+                . " so it is correct and " how ", and say whether that word was right.`n`n"
+                . "Their sentence:`n" q lk.context q "`n`n"
         else
-            p .= "They are unsure about the word " q lk.word q "; the sentence around it is not available.`n`n"
-        return p . "Reply with JSON only, with exactly these keys:`n"
-            . '{"verdict": "", "better": "", "points": [], "reader": "", "pattern": "", "pattern_use": "", "pattern_example": ""}' "`n`n"
-            . "verdict: " q "correct" q " if it is correct and natural; " q "small" q " if it is clear but a native speaker"
-            . " would put it a little differently; " q "wrong" q " if it has a real mistake or could be misread`n"
-            . "better: " (word ? "their sentence with the better word, and only the changes that matter" : "their text with only the changes that matter")
-            . ". Keep their words, meaning, opinion and tone, and do not make it more formal. Keep their line breaks."
-            . " Empty when the verdict is " q "correct" q "`n"
-            . "points: at most three short strings, each " q "what changed - why" q ", in simple English. Fewer is fine."
-            . " Empty when the verdict is " q "correct" q "`n"
-            . "reader: one sentence: what a native reader understands from their ORIGINAL "
-            . (word ? "sentence" : "text") ", so they can see whether it says what they meant`n"
-            . "pattern: one reusable phrase or sentence pattern worth learning from this - preferably about"
-            . " joining ideas, ordering a sentence or opening a point (for example " q "I can't tell whether ..." q "),"
-            . " not a single word. Always give one when something changed. When it was already correct and"
-            . " natural, give one only if a native speaker would more commonly say it another way; otherwise empty`n"
+            p .= "They are unsure about the word " q lk.word q "; the sentence around it is not available. Say"
+                . " whether it is a real, correctly spelled word, and give the right one if not.`n`n"
+        return p . "Then teach them: they will compare your version with theirs and want to learn why yours is better.`n`n"
+            . "Reply with JSON only, with exactly these keys:`n"
+            . '{"better": "", "points": [], "reader": "", "pattern": "", "pattern_use": "", "pattern_example": ""}' "`n`n"
+            . "better: your version. If nothing should change, their " (word ? "sentence" : "text") " exactly as it was`n"
+            . "points: one short string for each change worth learning, " q "what they wrote -> what you wrote: why" q ","
+            . " in simple English. Put spelling, capital letters and punctuation together in one point. Empty when nothing changed`n"
+            . "reader: only if their original could be misunderstood, what a reader would think it means, in one sentence;"
+            . " otherwise empty`n"
+            . "pattern: the most useful phrase or sentence pattern in your version to learn and reuse, with the"
+            . " changing part in brackets (for example " q "I can't tell whether [X] or [Y]" q ") - only if one of your"
+            . " changes really teaches one; otherwise empty`n"
             . "pattern_use: when to use it, in a few words`n"
-            . "pattern_example: one short new example sentence using it`n`n"
-            . "If it is correct and natural, say so; do not invent problems or impose a style. Casual chat"
-            . " writing (lower case, no full stop) is fine; mention it only if it changes the meaning."
-            . (word ? " Say whether the word fits here, and give the better word if not." : "")
+            . "pattern_example: one short new example sentence using it, correct and " ((lk.mode = "formal") ? "formal" : "natural")
     }
 
     static Prompt(lk) {
-        if (lk.mode = "check")
+        if IsCheck(lk.mode)
             return AiTrack.CheckPrompt(lk)
         if (lk.mode = "sentence")
             return AiTrack.SentencePrompt(lk)

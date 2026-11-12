@@ -326,7 +326,7 @@ Ellipsis(f) => f.Text(Chr(0x2026), CDim, "s9 Norm")
 PosLine(f, grp) => f.Text(grp["pos"] ((Dig(grp, "of") != "") ? "   " Chr(0xB7) "   " grp["of"] : ""), CAmber, "s8 Norm Italic", "", 1)
 
 RenderLookup(g, W, st, owner) {
-    if (st.HasProp("mode") && st.mode = "check")
+    if (st.HasProp("mode") && IsCheck(st.mode))
         return RenderCheck(g, W, st, owner)
     if (st.HasProp("mode") && st.mode = "sentence")
         return RenderSentence(g, W, st, owner)

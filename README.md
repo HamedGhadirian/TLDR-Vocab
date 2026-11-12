@@ -57,14 +57,16 @@ its × closes it. The next lookup opens a new card beside it, so you can keep se
 ## Check my English
 
 Select something you wrote — a chat message, an email, a post — and press **Ctrl + Win + `**
-(needs Gemini). The card says:
+(needs Gemini). Gemini rewrites it the way a native speaker would say it, and the card shows:
 
-- whether it is **correct**, needs a **small fix**, or **needs a fix**;
-- a **better version**, only when something should change, with the changed words in green and a
-  **copy** button — it never changes your text itself;
-- **why**, in two or three short points;
-- **what a reader understands** from what you wrote, so you can see if it says what you meant;
-- one **phrase or sentence pattern to learn** — **+ save** keeps it in your word list.
+- **NATURAL | FORMAL** at the top: everyday, spoken English (the default) or formal English, like an
+  email to a manager. Click the other one to see your text that way too;
+- **your text rewritten**, with the changed words in green and a **copy** button — it never changes
+  your text itself. "Nothing to change" when it is already right;
+- **what changed, and why**, one short point for each change;
+- **what a reader might think** it means — only when it could be misread;
+- a **phrase or sentence pattern to learn**, when one of the changes has one — **+ save** keeps it in
+  your word list.
 
 Select a **single word** to ask "is this word right here?". The sentence around it is read straight from
 the text box (Windows' UI Automation, no screen reading), so the mouse does not have to be over it.

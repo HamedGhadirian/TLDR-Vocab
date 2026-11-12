@@ -2,14 +2,36 @@
 
 Each version's notes. The release on GitHub is built from the section with its number.
 
+## 1.3.0 — 2026-11-12
+
+- **Check my English** — select something you wrote and press **Ctrl + Win + `**. Gemini rewrites it the way a native speaker would say it, and the card shows what changed and why, one short line each.
+- **Natural or formal** — switch at the top of the card: everyday English, or the kind you'd write to your manager.
+- **A pattern to learn** — when a change teaches a phrase you can use again, **+ save** keeps it in your word list.
+- **Pinned cards stay in front**, even after you click the taskbar or another always-on-top window.
+- **"Look up again" really asks again** — Gemini models resting after a busy moment are asked too.
+
+<details>
+<summary>Everything that changed</summary>
+
+- Select a single word to ask "is this word right here?". Its sentence is read straight from the text box.
+- **copy** puts the rewrite on the clipboard. Your own text is never changed.
+- "What a reader might think" shows up only when the text could be misread.
+- "Nothing to change" when it's already right.
+- Up to about 300 words per check.
+
+</details>
+
 ## 1.2.5 — 2026-10-14
 
-### Fixed
+<details>
+<summary><b>Fixed</b> (4)</summary>
 
 - **With the VPN off, the card says so at once**: "Gemini not reached … check the VPN or proxy", instead of trying every model first.
 - **A VPN that cannot get through no longer benches Gemini for two hours.** Only Google's own "busy" rests a model now.
 - **When every model is resting, Flash-Lite is still asked** before the card gives up.
 - **TLDR Vocab keeps its own taskbar button**, apart from other AutoHotkey scripts.
+
+</details>
 
 ## 1.2.4 — 2026-10-07
 

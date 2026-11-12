@@ -3,11 +3,15 @@
 ; say it?
 ;================================================================================
 ; The CHECK card; the code calls it "check". Select something you wrote - a
-; chat message, an email, a post - and press Ctrl + Win + `. Gemini says
-; whether it is right, gives a better version only when something should
-; change, says why in a few short points, says what a reader would understand
-; from it as written, and picks one phrase or sentence pattern worth learning,
-; which "+ save" keeps in the word list like a word.
+; chat message, an email, a post - and press Ctrl + Win + `. Gemini rewrites
+; it the way it thinks a native speaker would say it, then teaches: each
+; change and why, what a reader might wrongly think it means (only when they
+; might), and a phrase or sentence pattern worth learning, when one of the
+; changes has one - "+ save" keeps it in the word list like a word.
+;
+; NATURAL | FORMAL at the top: everyday, colloquial English (the default; the
+; code calls it "check") or formal ("formal"). Switching asks for the other
+; one; switching back shows the answer already there (ModeMemo, Sentence.ahk).
 ;
 ; ONE WORD selected asks "is this word right here?", which needs the sentence
 ; it is in. That is read from the text box itself through UI Automation - the
@@ -16,7 +20,7 @@
 ; selection is. Apps that do not take part (games, some odd programs) get the
 ; screen read under the pointer instead, the way a word lookup reads it.
 ;
-; It never changes your text. "copy" puts the better version on the
+; It never changes your text. "copy" puts the new version on the
 ; clipboard; pasting it, or fixing it yourself, is up to you.
 ;
 ; Explanations are in simple English, not the translation language: reading
@@ -26,6 +30,9 @@
 
 ; about 300 words: a long email, not a document
 CheckMaxChars() => 2000
+
+; the two kinds of check: natural English and formal
+IsCheck(mode) => (mode = "check" || mode = "formal")
 
 CheckSelection(*) {
     MouseGetPos(&mx, &my)
@@ -238,7 +245,9 @@ RenderCheck(g, W, st, owner) {
     one := (st.context != "" || CountWords(st.word) = 1)
 
     g.SetFont("s7 Bold c" CBlue, FontUI)
-    g.Add("Text", "x" f.x " y" (f.y + 6) " BackgroundTrans +0x80", "CHECK MY ENGLISH")
+    c := g.Add("Text", "x" f.x " y" (f.y + 6) " BackgroundTrans +0x80", "CHECK MY ENGLISH")
+    c.GetPos(, , &cw)
+    ModeSwitch(g, f, st, owner, [["check", "NATURAL"], ["formal", "FORMAL"]], f.x + cw + 16)
     CardLinks(g, f.x + f.w, f.y + 2, [PinAction(owner)
         , lk ? {text: "check again", color: CBlue, w: 90, fn: (*) => owner.Again()} : ""])
     f.y += 26
@@ -273,28 +282,27 @@ RenderCheck(g, W, st, owner) {
 
 CheckAnswer(f, st, owner, ai, one) {
     g := f.g
-    v := ai["verdict"]
     better := ai["better"]
     ; the same text back is no better version - but a capital letter is a change
-    if (v = "correct" || RegExReplace(better, "\s+", " ") == RegExReplace(one ? st.context : st.word, "\s+", " "))
+    if (RegExReplace(better, "\s+", " ") == RegExReplace(one ? st.context : st.word, "\s+", " "))
         better := ""
     f.y += 4
-    f.Text((v = "correct") ? Chr(0x2713) " Correct" : (v = "small") ? "Small fix" : (v = "wrong") ? "Needs a fix" : "Checked"
-        , (v = "correct") ? CGreen : (v = "wrong") ? CRed : CAmber, "s11 Bold")
+    if (better = "" && !ai["points"].Length)
+        f.Text(Chr(0x2713) " Nothing to change", CGreen, "s11 Bold")
 
     if (better != "") {
         copied := st.HasProp("copied") ? st.copied : ""
-        CheckLabel(f, "BETTER VERSION", (copied != "") ? copied : "copy"
+        CheckLabel(f, (st.mode = "formal") ? "FORMAL VERSION" : "NATURAL VERSION", (copied != "") ? copied : "copy"
             , (copied != "") ? CMuted : CBlue, (*) => CheckCopy(owner, better))
         f.Runs(DiffWords(one ? st.context : st.word, better), "s10 Norm", CText, CGreen)
     }
     if ai["points"].Length {
-        f.Label("WHY")
+        f.Label("WHAT CHANGED, AND WHY")
         for p in ai["points"]
             f.Text(Chr(0x2022) "  " p, CText, "s9 Norm", "", 3)
     }
     if (ai["reader"] != "") {
-        f.Label("WHAT A READER UNDERSTANDS")
+        f.Label("A READER MIGHT THINK")
         f.Text(ai["reader"], CText, "s9 Norm")
     }
     if (ai["pattern"] != "") {
