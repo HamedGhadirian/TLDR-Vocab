@@ -115,23 +115,23 @@ first.Close()
 CheckTrue("pin: its x closes it for good", !PopupCard.pinned.Length && !first.g)
 
 ; Settings: a window that scrolls, and can be made shorter
-for a in Keys.List                      ; the key rows need keys; the defaults, not registered
-    Keys.cur[a.id] := a.def
+for a in KitKeys.List()                 ; the key rows need keys; the defaults, not registered
+    KitKeys.now[a.id] := a.def
 IniDelete(VocabIni(), "Window", "SettingsH")     ; not the height a past run left it at
-Settings.Show()
-WinMove(40, 40, , , Settings.g.Hwnd)
-full := Settings.pane.contentH
-Settings.g.Move(, , , 400)
+KitSettings.Show()
+WinMove(40, 40, , , KitSettings.g.Hwnd)
+full := KitSettings.pane.contentH
+KitSettings.g.Move(, , , 400)
 Sleep 200
-WinGetClientPos(, , , &ch, Settings.g.Hwnd)
-CheckTrue("settings: can be made shorter than its content", Settings.pane.h < full && Settings.pane.h = ch, Settings.pane.h " of " full)
-WinGetPos(&sx, &sy, &sw, &sh, Settings.g.Hwnd)
-CheckTrue("settings: the wheel finds its pane", ScrollPane.At(sx + sw // 2, sy + sh // 2) == Settings.pane)
-Settings.pane.ScrollBy(200)
-CheckTrue("settings: it scrolls", Settings.pane.scroll = 200, Settings.pane.scroll)
-Settings.pane.ScrollBy(100000)
-CheckTrue("settings: not past the end", Settings.pane.scroll = full - Settings.pane.h)
-Settings.Close()
+WinGetClientPos(, , , &ch, KitSettings.g.Hwnd)
+CheckTrue("settings: can be made shorter than its content", KitSettings.pane.h < full && KitSettings.pane.h = ch, KitSettings.pane.h " of " full)
+WinGetPos(&sx, &sy, &sw, &sh, KitSettings.g.Hwnd)
+CheckTrue("settings: the wheel finds its pane", KitPane.At(sx + sw // 2, sy + sh // 2) == KitSettings.pane)
+KitSettings.pane.ScrollBy(200)
+CheckTrue("settings: it scrolls", KitSettings.pane.scroll = 200, KitSettings.pane.scroll)
+KitSettings.pane.ScrollBy(100000)
+CheckTrue("settings: not past the end", KitSettings.pane.scroll = full - KitSettings.pane.h)
+KitSettings.Close()
 
 ; Check my English, one word: the sentence comes from the text box itself
 ; (UI Automation), exactly where the selection is - the word is in the box

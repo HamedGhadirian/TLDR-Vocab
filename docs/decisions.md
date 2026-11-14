@@ -329,6 +329,33 @@ The first design, kept for its history:
 - **The tray tip ran out of room** with a seventh key (127 characters). The name goes before any key
   does, and "word list" became "words".
 
+## On the shared kit (1.4.0)
+
+- **What moved.** The settings window, the keys and their recording, the tray
+  menu, Start with Windows, administrator, the theme, the update check and
+  updating itself, JSON and web requests are now `lib\Kit` — one copy of
+  code shared with other apps in the same style, so a fix there is a fix
+  everywhere. Vocab's own work (reading the screen, the sources, the cards,
+  the word list) stays in `lib\`. The kit grew from Vocab's own parts, so
+  little changed in how they behave.
+- **The order of Settings** is the family's: General, Keys, then Vocab's own
+  parts. The Gemini key row is drawn by Vocab (`lib\Settings.ahk`), as a
+  "custom" row of the kit's table.
+- **Light theme.** The cards' colours are the kit's palette, copied in at
+  start and again when the theme changes; the word list is built again and
+  pinned cards are drawn again.
+- **Kept the same on purpose:** the taskbar's app id (`TLDR.Vocab`), so a
+  pinned button keeps working; the User-Agent the dictionaries see; the
+  `.ini` name and every line in it.
+- **The bridges.** Copies before 1.4.0 refuse to update to a version whose
+  file list lacks `lib/Updater.ahk` and `lib/Swap.ahk`. The real ones are in
+  `lib\Kit` now, so two small files of those names stay in `lib\` for good.
+  Checked before the release: 1.3.1's own update code, run on the real
+  1.4.0-beta.1 zip, accepted it, swapped the files, left the user's own
+  alone, and the result loaded.
+- **The daily check's date** moved out of `Vocab.ini` into the temp folder:
+  it means nothing on another PC. An old `LastUpdateCheck` line is left alone.
+
 ## Removed on purpose
 
 - **The setting that hid the speaker button.** The button is always there now; a switch to hide one

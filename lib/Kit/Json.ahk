@@ -1,13 +1,13 @@
 ;================================================================================
-; Json.ahk - a small JSON reader and writer for AutoHotkey v2
+; KitJson.ahk - a small JSON reader and writer for AutoHotkey v2
 ;================================================================================
-; Json.Parse(text)
+; KitJson.Parse(text)
 ;     objects -> Map, arrays -> Array, true/false -> 1/0, null -> "".
 ;     A null field and a missing one therefore read the same, which is exactly
 ;     what every caller here wants. Throws on malformed input - the callers
 ;     treat that as "this source failed, try the next one".
 ;
-; Json.Dump(value, indent := "", ascii := false)
+; KitJson.Dump(value, indent := "", ascii := false)
 ;     Map / Array / plain Object -> JSON text; indent "" gives a single line.
 ;     ascii := true writes every non-ASCII character as \uXXXX. Request bodies
 ;     go out that way, so nothing on the wire can be mangled by a code page.
@@ -17,11 +17,11 @@
 ;================================================================================
 #Requires AutoHotkey v2.0
 
-class Json {
+class KitJson {
     static Parse(text) {
         pos := 1
-        v := Json._Val(&text, &pos)
-        Json._Ws(&text, &pos)
+        v := KitJson._Val(&text, &pos)
+        KitJson._Ws(&text, &pos)
         if (pos <= StrLen(text))
             throw Error("JSON: unexpected text at " pos)
         return v
@@ -37,24 +37,24 @@ class Json {
     }
 
     static _Val(&t, &p) {
-        Json._Ws(&t, &p)
+        KitJson._Ws(&t, &p)
         c := SubStr(t, p, 1)
         if (c == "{") {
             obj := Map(), p++
-            Json._Ws(&t, &p)
+            KitJson._Ws(&t, &p)
             if (SubStr(t, p, 1) == "}")
                 return (p++, obj)
             loop {
-                Json._Ws(&t, &p)
+                KitJson._Ws(&t, &p)
                 if (SubStr(t, p, 1) != '"')
                     throw Error("JSON: expected a key at " p)
-                k := Json._Str(&t, &p)
-                Json._Ws(&t, &p)
+                k := KitJson._Str(&t, &p)
+                KitJson._Ws(&t, &p)
                 if (SubStr(t, p, 1) != ":")
                     throw Error("JSON: expected : at " p)
                 p++
-                obj[k] := Json._Val(&t, &p)
-                Json._Ws(&t, &p)
+                obj[k] := KitJson._Val(&t, &p)
+                KitJson._Ws(&t, &p)
                 c := SubStr(t, p++, 1)
                 if (c == "}")
                     return obj
@@ -64,12 +64,12 @@ class Json {
         }
         if (c == "[") {
             arr := [], p++
-            Json._Ws(&t, &p)
+            KitJson._Ws(&t, &p)
             if (SubStr(t, p, 1) == "]")
                 return (p++, arr)
             loop {
-                arr.Push(Json._Val(&t, &p))
-                Json._Ws(&t, &p)
+                arr.Push(KitJson._Val(&t, &p))
+                KitJson._Ws(&t, &p)
                 c := SubStr(t, p++, 1)
                 if (c == "]")
                     return arr
@@ -78,7 +78,7 @@ class Json {
             }
         }
         if (c == '"')
-            return Json._Str(&t, &p)
+            return KitJson._Str(&t, &p)
         if InStr("-0123456789", c) && c != "" {
             s := p
             while InStr("+-.eE0123456789", SubStr(t, p, 1)) && SubStr(t, p, 1) != ""
@@ -111,7 +111,7 @@ class Json {
         }
         raw := SubStr(t, s, e - s)
         p := e + 1
-        return InStr(raw, "\") ? Json._Unescape(raw) : raw
+        return InStr(raw, "\") ? KitJson._Unescape(raw) : raw
     }
 
     static _Unescape(s) {
@@ -138,12 +138,12 @@ class Json {
             parts := []
             if (v is Array) {
                 for x in v
-                    parts.Push(inner Json.Dump(IsSet(x) ? x : "", indent, ascii, inner))
+                    parts.Push(inner KitJson.Dump(IsSet(x) ? x : "", indent, ascii, inner))
                 open := "[", close := "]"
             } else {
                 colon := (indent = "") ? ":" : ": "
                 for k, x in (v is Map ? v : v.OwnProps())
-                    parts.Push(inner Json._Q(String(k), ascii) colon Json.Dump(x, indent, ascii, inner))
+                    parts.Push(inner KitJson._Q(String(k), ascii) colon KitJson.Dump(x, indent, ascii, inner))
                 open := "{", close := "}"
             }
             if !parts.Length
@@ -155,7 +155,7 @@ class Json {
         }
         if (v is Integer || v is Float)
             return String(v)
-        return Json._Q(String(v), ascii)
+        return KitJson._Q(String(v), ascii)
     }
 
     static _Q(s, ascii) {

@@ -29,7 +29,8 @@
 ;================================================================================
 #Requires AutoHotkey v2.0
 
-VocabIni() => A_ScriptDir "\Vocab.ini"
+; Vocab.ini beside Vocab.ahk - the kit knows its path (Kit.Start, Vocab.ahk)
+VocabIni() => Kit.ini
 
 ; The key lives in Vocab.ini rather than in this file, so the script can be
 ; shared without it; the settings window writes it there. GEMINI_API_KEY in
@@ -84,119 +85,13 @@ WriteFileAtomic(path, text) {
 }
 
 ;--------------------------------------------------------------------------------
-; One asynchronous HTTP request. Poll() until it returns true.
+; One asynchronous HTTP request: the kit's (lib\Kit\Http.ahk) - Poll() until
+; it returns true; Ok, Why, text, raw, Abort(); the proxy from [Network] Proxy.
+; What Vocab adds: the User-Agent its sources have always seen (Kit.Start
+; hands it to the kit), and Enc, for words in a web address.
 ;--------------------------------------------------------------------------------
-class Http {
+class Http extends KitHttp {
     static UA := "Mozilla/5.0 (Windows NT 10.0; Win64; x64) VocabLookup/1.0"
-
-    __New(url, opts := "") {
-        this.url := url, this.status := 0, this.text := "", this.err := "", this.done := false
-        this.req := "", this.raw := ""
-        o := IsObject(opts) ? opts : {}
-        this.wantRaw := o.HasProp("raw") && o.raw        ; audio: keep the bytes
-        timeout := o.HasProp("timeout") ? o.timeout : 8000
-        this.deadline := A_TickCount + timeout
-        try {
-            r := ComObject("WinHttp.WinHttpRequest.5.1")
-            r.Open(o.HasProp("method") ? o.method : "GET", url, true)
-            if (px := Http.Proxy())
-                r.SetProxy(2, px[1], px[2])             ; HTTPREQUEST_PROXYSETTING_PROXY
-            r.SetTimeouts(timeout, timeout, timeout, timeout)
-            r.Option[0] := Http.UA
-            if o.HasProp("headers")
-                for k, v in o.headers
-                    r.SetRequestHeader(k, v)
-            if o.HasProp("body")
-                r.Send(o.body)
-            else
-                r.Send()
-            this.req := r
-        } catch as e {
-            this.err := Http.Short(e.Message), this.done := true
-        }
-    }
-
-    Poll() {
-        if this.done
-            return true
-        try {
-            if !this.req.WaitForResponse(0) {
-                if (A_TickCount < this.deadline)
-                    return false
-                try this.req.Abort()
-                this.err := "timed out"
-            } else {
-                this.status := this.req.Status
-                body := this.req.ResponseBody
-                if this.wantRaw
-                    this.raw := body
-                else
-                    this.text := Http.Utf8(body)
-            }
-        } catch as e
-            this.err := Http.Short(e.Message)
-        this.req := ""
-        return this.done := true
-    }
-
-    ; [Network] Proxy in Vocab.ini:
-    ;   auto (or empty)   follow the Windows proxy setting - the one a VPN app
-    ;                     such as v2rayN turns on in "system proxy" mode.
-    ;                     WinHttp ignores that setting by itself, so without
-    ;                     this every request would go direct and fail wherever
-    ;                     direct access is blocked
-    ;   127.0.0.1:10809   always use this proxy
-    ;   none              always go direct
-    ; Read per request, so switching the VPN's mode takes effect at once.
-    static Proxy() {
-        cfg := Trim(IniRead(VocabIni(), "Network", "Proxy", "auto"))
-        if (cfg = "none" || cfg = "direct")
-            return ""
-        if (cfg != "" && cfg != "auto")
-            return [cfg, "<local>"]
-        key := "HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
-        try {
-            if RegRead(key, "ProxyEnable", 0) {
-                s := RegRead(key, "ProxyServer", "")
-                if (s != "")
-                    return [s, RegRead(key, "ProxyOverride", "<local>")]
-            }
-        }
-        return ""
-    }
-
-    ; gives up on a request still waiting - its answer is no longer wanted
-    Abort() {
-        if this.done
-            return
-        try this.req.Abort()
-        this.req := "", this.err := "cancelled", this.done := true
-    }
-
-    Ok  => (this.err = "" && this.status >= 200 && this.status < 300)
-    Why => (this.err != "") ? this.err : "HTTP " this.status
-
-    ; ResponseText trusts the server's charset header; the raw bytes as UTF-8
-    ; are right for every source here, headers or not.
-    static Utf8(body) {
-        if !IsObject(body)
-            return ""
-        n := body.MaxIndex() + 1
-        if (n <= 0)
-            return ""
-        return StrGet(NumGet(ComObjValue(body), 8 + A_PtrSize, "ptr"), n, "UTF-8")
-    }
-
-    ; The bytes exactly as they arrived - for audio, where decoding as text
-    ; would ruin them
-    static Write(body, path) {
-        n := body.MaxIndex() + 1
-        out := FileOpen(path, "w")
-        if !out
-            throw Error("cannot write " path)
-        out.RawWrite(NumGet(ComObjValue(body), 8 + A_PtrSize, "ptr"), n)
-        out.Close()
-    }
 
     static Enc(s) {
         buf := Buffer(StrPut(s, "UTF-8"))
@@ -208,13 +103,6 @@ class Http {
                 || b = 0x2D || b = 0x2E || b = 0x5F || b = 0x7E) ? Chr(b) : Format("%{:02X}", b)
         }
         return out
-    }
-
-    static Short(msg) {
-        msg := Trim(StrSplit(msg, "`n")[1], " `t`r")
-        msg := RegExReplace(msg, "^0x[0-9A-Fa-f]+ - ")
-        msg := RegExReplace(msg, "^\((.*)\)$", "$1")        ; a bare "(0x80072EFD)", so callers' own brackets do not double
-        return (StrLen(msg) > 60) ? SubStr(msg, 1, 57) "..." : msg
     }
 }
 
@@ -234,7 +122,7 @@ class Cache {
         f := Cache.File(q)
         if (f = "" || !FileExist(f))
             return ""
-        try return Dig(Json.Parse(FileRead(f, "UTF-8")), kind)
+        try return Dig(KitJson.Parse(FileRead(f, "UTF-8")), kind)
         return ""
     }
 
@@ -243,13 +131,13 @@ class Cache {
         if (f = "")
             return
         m := ""
-        try m := Json.Parse(FileRead(f, "UTF-8"))
+        try m := KitJson.Parse(FileRead(f, "UTF-8"))
         if !(m is Map)
             m := Map()
         m[kind] := data
         try {
             DirCreate(Cache.Dir)
-            WriteFileAtomic(f, Json.Dump(m, " "))
+            WriteFileAtomic(f, KitJson.Dump(m, " "))
         } catch as e
             VocabLog("cache write failed for " q ": " e.Message)
     }
@@ -539,7 +427,7 @@ class DefTrack extends Track {
     }
 
     static FreeDict(q, r) {
-        d := Json.Parse(r.text)
+        d := KitJson.Parse(r.text)
         out := DefTrack.Blank()
         for e in (Dig(d, "entries") || []) {
             if (Dig(e, "language", "code") != "en")
@@ -578,7 +466,7 @@ class DefTrack extends Track {
     }
 
     static Wiktionary(q, r) {
-        d := Json.Parse(r.text)
+        d := KitJson.Parse(r.text)
         out := DefTrack.Blank()
         for e in (Dig(d, "en") || []) {
             senses := []
@@ -604,7 +492,7 @@ class DefTrack extends Track {
     }
 
     static Datamuse(q, r) {
-        arr := Json.Parse(r.text)
+        arr := KitJson.Parse(r.text)
         if !(arr is Array) || !arr.Length || StrLower(Dig(arr, 1, "word")) != q
             return ""
         names := Map("n", "noun", "v", "verb", "adj", "adjective", "adv", "adverb", "u", "")
@@ -637,7 +525,7 @@ class DefTrack extends Track {
     }
 
     static DatamusePron(q, r) {
-        arr := Json.Parse(r.text)
+        arr := KitJson.Parse(r.text)
         if !(arr is Array) || !arr.Length || StrLower(Dig(arr, 1, "word")) != q
             return ""
         for tag in (Dig(arr, 1, "tags") || [])
@@ -798,7 +686,7 @@ class FaTrack extends Track {
     }
 
     static Google(q, r) {
-        d := Json.Parse(r.text)            ; the "automated queries" page is HTML and throws here
+        d := KitJson.Parse(r.text)            ; the "automated queries" page is HTML and throws here
         main := ""
         for seg in (Dig(d, 1) || [])
             main .= Dig(seg, 1)
@@ -818,12 +706,12 @@ class FaTrack extends Track {
     }
 
     static Lingva(q, r) {
-        t := Trim(Dig(Json.Parse(r.text), "translation"))
+        t := Trim(Dig(KitJson.Parse(r.text), "translation"))
         return (t = "" || t = q) ? "" : Map("main", t, "groups", [])
     }
 
     static MyMemory(q, r) {
-        d := Json.Parse(r.text)
+        d := KitJson.Parse(r.text)
         t := Trim(Dig(d, "responseData", "translatedText"))
         if (Dig(d, "responseStatus") != 200 || t = "" || t = q || InStr(t, "MYMEMORY"))
             return ""
@@ -992,7 +880,7 @@ class AiTrack extends Track {
             return
         AiTrack.loaded := true
         try {
-            s := Json.Parse(FileRead(AiTrack.StateFile, "UTF-8"))
+            s := KitJson.Parse(FileRead(AiTrack.StateFile, "UTF-8"))
             if (Dig(s, "listed") = FormatTime(, "yyyyMMdd") && Dig(s, "order") = AiTrack.Order
                 && Dig(s, "models") is Array && s["models"].Length)
                 AiTrack.chain := s["models"], AiTrack.listed := s["listed"]
@@ -1009,7 +897,7 @@ class AiTrack extends Track {
                 AiTrack.resting.Delete(m)
         try {
             DirCreate(Cache.Dir)
-            WriteFileAtomic(AiTrack.StateFile, Json.Dump(Map("models", AiTrack.chain || []
+            WriteFileAtomic(AiTrack.StateFile, KitJson.Dump(Map("models", AiTrack.chain || []
                 , "listed", AiTrack.listed, "order", AiTrack.Order, "resting", AiTrack.resting), " "))
         } catch as e
             VocabLog("saving gemini.json failed: " e.Message)
@@ -1044,7 +932,7 @@ class AiTrack extends Track {
             return DateAdd(A_NowUTC, AiTrack.SlowRest, "Seconds")
         wait := 60
         try {
-            for det in (Dig(Json.Parse(r.text), "error", "details") || []) {
+            for det in (Dig(KitJson.Parse(r.text), "error", "details") || []) {
                 for v in (Dig(det, "violations") || [])
                     if InStr(Dig(v, "quotaId"), "PerDay")
                         return AiTrack.NextQuotaDay()
@@ -1133,7 +1021,7 @@ class AiTrack extends Track {
         cfg := Map("responseMimeType", "application/json", "temperature", 0.2)
         if IsObject(think)
             cfg["thinkingConfig"] := think
-        body := Json.Dump(Map("contents", [Map("role", "user", "parts", [Map("text", AiTrack.Prompt(this.lk))])]
+        body := KitJson.Dump(Map("contents", [Map("role", "user", "parts", [Map("text", AiTrack.Prompt(this.lk))])]
             , "generationConfig", cfg), "", true)
         return {name: "Gemini", kind: "gen", model: model, think: IsObject(think)
             , url: AiTrack.Api "models/" model ":generateContent", after: after
@@ -1321,7 +1209,7 @@ class AiTrack extends Track {
     }
 
     static ErrMsg(r) {
-        try return Dig(Json.Parse(r.text), "error", "message")
+        try return Dig(KitJson.Parse(r.text), "error", "message")
         return ""
     }
 
@@ -1332,13 +1220,13 @@ class AiTrack extends Track {
     static FromGoogle(r) {
         if r.Ok
             return true
-        try return Dig(Json.Parse(r.text), "error", "code") = r.status
+        try return Dig(KitJson.Parse(r.text), "error", "code") = r.status
         return false
     }
 
     static PickModels(r) {
         flash := [], lite := []
-        for m in (Dig(Json.Parse(r.text), "models") || []) {
+        for m in (Dig(KitJson.Parse(r.text), "models") || []) {
             name := StrReplace(Dig(m, "name"), "models/")
             if !HasVal(Dig(m, "supportedGenerationMethods") || [], "generateContent")
                 continue
@@ -1374,7 +1262,7 @@ class AiTrack extends Track {
     }
 
     static Answer(mode, r) {
-        d := Json.Parse(r.text)
+        d := KitJson.Parse(r.text)
         txt := ""
         for p in (Dig(d, "candidates", 1, "content", "parts") || [])
             if !Dig(p, "thought")
@@ -1382,7 +1270,7 @@ class AiTrack extends Track {
         a := InStr(txt, "{"), b := InStr(txt, "}", , -1)
         if (!a || b < a)
             return ""
-        j := Json.Parse(SubStr(txt, a, b - a + 1))
+        j := KitJson.Parse(SubStr(txt, a, b - a + 1))
         if !(j is Map)
             return ""
         if IsCheck(mode)

@@ -2,7 +2,9 @@
 ; Harness.ahk - what every test file starts with
 ;================================================================================
 ; The whole app is included (lib\All.ahk), but nothing of Vocab.ahk's start-up
-; runs: no tray, no keys, no windows. A_ScriptDir is this tests folder, so the
+; runs: no tray, no keys, no windows. The kit is told Vocab's facts the way
+; Vocab.ahk tells it (Kit.Adopt, which starts nothing), and quiet: true keeps
+; its notices off the screen. A_ScriptDir is this tests folder, so the
 ; settings file, cache and log a test might touch are the tests' own, never
 ; the real ones next to Vocab.ahk.
 ;
@@ -18,6 +20,10 @@
 #Include %A_LineFile%\..\..\lib\All.ahk
 
 CoordMode("Mouse", "Screen")
+Kit.Adopt({name: AppName, version: VocabVersion, repo: "HamedGhadirian/TLDR-Vocab"
+    , repoWas: ["HamedPhixer/TLDR-Vocab"], ini: A_ScriptDir "\Vocab.ini", quiet: true
+    , appId: "TLDR.Vocab", agent: Http.UA, keys: VocabKeys(), rows: () => VocabRows()
+    , apply: () => VocabApply(), keep: ["words.json", "words.unreadable-*", "backups", "cache"]})
 global T_Out := A_ScriptDir "\results-" RegExReplace(A_ScriptName, "\.ahk$") ".txt"
 try FileDelete(T_Out)
 

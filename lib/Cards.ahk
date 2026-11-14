@@ -213,32 +213,20 @@ PaneWheel(wParam, lParam, msg, hwnd) {
     }
 }
 
-Link(ctrl, fn) {
-    ctrl.OnEvent("Click", fn)
-    LinkHwnds[ctrl.Hwnd] := true
-    return ctrl
-}
+; A clickable text, with the hand cursor: the kit's (KitUi.Link). A card is
+; rebuilt on every change, so DropGui forgets its links with it - otherwise the
+; list would grow all day, and a handle Windows hands out again later could get
+; the hand cursor.
+Link(ctrl, fn) => KitUi.Link(ctrl, fn)
+DropGui(g) => KitUi.Drop(g)
 
-; A card is rebuilt on every change, so its links are forgotten with it -
-; otherwise LinkHwnds would grow all day, and a handle Windows hands out again
-; later could get the hand cursor.
-DropGui(g) {
-    for ctrl in g
-        if LinkHwnds.Has(ctrl.Hwnd)
-            LinkHwnds.Delete(ctrl.Hwnd)
-    g.Destroy()
-}
-
+; the cross over the box being drawn, and the up-down arrows over the word
+; list's divider (the hand over links is the kit's own)
 OnSetCursor(wParam, lParam, msg, hwnd) {
-    static hand := DllCall("LoadCursor", "ptr", 0, "ptr", 32649, "ptr")
     static ns   := DllCall("LoadCursor", "ptr", 0, "ptr", 32645, "ptr")
     static cross := DllCall("LoadCursor", "ptr", 0, "ptr", 32515, "ptr")
     if (Box.dim && wParam = Box.dim.Hwnd) {
         DllCall("SetCursor", "ptr", cross)
-        return true
-    }
-    if LinkHwnds.Has(wParam) {
-        DllCall("SetCursor", "ptr", hand)
         return true
     }
     if (Dict.g && wParam = Dict.g.Hwnd && (lParam & 0xFFFF) = 1 && Dict.OverDivider()) {
@@ -433,7 +421,7 @@ RenderLookup(g, W, st, owner) {
         ; the word card works whole without Gemini, so only a quiet line
         if !lk.ai.enabled
             Link(f.Text("Gemini is off: add a free key for the meaning that fits the sentence"
-                , CDim, "s7 Norm"), (*) => Settings.Show("gemini"))
+                , CDim, "s7 Norm"), (*) => GeminiKeyBox())
     }
     return f.y + 8
 }

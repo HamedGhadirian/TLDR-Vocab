@@ -1,71 +1,68 @@
 ;================================================================================
-; App.ahk - the ini, the icon, the tray, and starting a lookup
+; App.ahk - starting up, the tray items, the icon, and starting a lookup
+;================================================================================
+; Vocab.ahk hands these to the kit (Kit.Start): VocabStart runs once the
+; settings file is there and administrator is settled, before the keys are
+; switched on; VocabApply after a setting changed; VocabTheme after the
+; theme did; VocabTray adds Vocab's own items to the top of the tray menu.
 ;================================================================================
 #Requires AutoHotkey v2.0
 
-EnsureIni() {
-    if FileExist(VocabIni())
-        return
-    FileAppend("
-    (
-[Gemini]
-; Easiest from the tray menu: Settings. Everything in this file is there.
-; Optional, free: Gemini explains sentences in plain English, writes the
-; summaries, and picks the meaning of a word that fits the sentence. Without
-; it the dictionary, the Persian and the pronunciation all still work.
-; Get a key at https://aistudio.google.com/apikey (sign in with Google,
-; Create API key) and paste it after the = , or in Settings.
-ApiKey=
-; Leave empty to use the newest free Flash model automatically.
-Model=
-
-[Network]
-; auto = follow the Windows proxy when one is switched on (a VPN app in
-; "system proxy" mode, for example). Or name one: 127.0.0.1:10809
-; none = always connect directly.
-Proxy=auto
-
-[Sound]
-SayOnLookup=0
-
-[General]
-; 1 = start as administrator (Windows asks each time), so the selection key
-; can copy from programs that run as administrator. Applies from next start.
-RunAsAdmin=0
-; 1 = once a day, ask GitHub whether there is a newer version
-CheckUpdates=1
-
-[Keys]
-; Set in Settings. Only keys that differ from the default are listed;
-; delete a line to go back to the default.
-    )", VocabIni())
+VocabStart() {
+    VocabColours()
+    TrimLog()
+    LoadSoundSettings()
+    Store.Load()
+    SetTimer(() => PronFill.Start(), -5000)
+    SetTimer(() => AiTrack.Warm(), -3000)   ; Gemini's model list, before the first lookup needs it
+    OnMessage(0x83, DictNcCalc)             ; WM_NCCALCSIZE
+    OnMessage(0x84, DictHitTest)            ; WM_NCHITTEST
+    OnMessage(0x86, DictNcActivate)         ; WM_NCACTIVATE
+    OnMessage(0x201, DictMouseDown)         ; WM_LBUTTONDOWN - the divider
+    OnMessage(0x201, ObjBindMethod(PopupCard, "DragPinned"))   ; - and moving a pinned popup
+    OnMessage(0x20A, PaneWheel)             ; WM_MOUSEWHEEL
+    OnMessage(0x20, OnSetCursor)            ; WM_SETCURSOR
+    OnMessage(0x232, DictMoved)             ; WM_EXITSIZEMOVE
+    OnExit((*) => Dict.SavePos())
+    NoKeyNotice()
 }
 
-; IconFile as a full path: a bare name, or anything not starting at a drive
-; letter or a network share, is taken to sit next to this script.
+; a setting changed in the settings window: what is not read afresh anyway
+VocabApply() {
+    LoadSoundSettings()
+}
+
+; dark or light: the colours, then the windows that are up drawn again
+VocabTheme() {
+    VocabColours()
+    Dict.Retheme()
+    PopupCard.Retheme()
+}
+
+VocabTray(m) {
+    m.Add("Open dictionary", (*) => Dict.Toggle())
+    m.Add("Open the " AppName " folder", (*) => Run('explorer.exe "' A_ScriptDir '"'))
+}
+
+; The icon as a full path: the .ini's [Icons] Tray line (the kit's - blank
+; means IconFile next to this script), else IconFile itself: a bare name, or
+; anything not starting at a drive letter or a network share, sits next to
+; this script.
 IconPath() {
+    if ((p := KitIcons.Path()) != "")
+        return p
     if (IconFile = "")
         return ""
     return RegExMatch(IconFile, "^([A-Za-z]:|\\\\)") ? IconFile : A_ScriptDir "\" IconFile
 }
 
-SetScriptIcon() {
-    path := IconPath()
-    if (path = "")
-        return
-    if !FileExist(path) {
-        TrayTip("Icon not found:`n" path, AppName, 2)
-        return
-    }
-    try TraySetIcon(path, IconNum)
-    catch
-        TrayTip("Not a usable icon file:`n" path, AppName, 2)
-}
-
-; The taskbar button takes the window's own icons, which are set separately
-; from the tray's. Only real icons (image type 1) are handed over.
+; A window's taskbar button: Vocab's own (the kit's KitTaskbar, with the app
+; id Vocab.ahk names, so a pinned button keeps working), with its icon - which
+; the taskbar takes from the window, not from the tray. Only real icons
+; (image type 1) are handed over. Before the window's first Show, which is
+; when the button is made.
 SetWindowIcon(hwnd) {
-    SetWindowAppId(hwnd)
+    KitTaskbar.Id(hwnd)
     path := IconPath()
     if (path = "" || !FileExist(path))
         return
@@ -76,62 +73,6 @@ SetWindowIcon(hwnd) {
             SendMessage(0x80, 0, small, , hwnd)         ; WM_SETICON, ICON_SMALL
         if (t2 = 1)
             SendMessage(0x80, 1, big, , hwnd)           ; ICON_BIG
-    }
-}
-
-; A taskbar button of its own. Windows puts every window of one program file
-; under one button, and from source this runs on the same AutoHotkey64.exe as
-; any other v2 script - so another script's window would land in Vocab's
-; button. An app id (AppUserModelID, the name the taskbar groups by) keeps them
-; apart. Set before the window's first Show, which is when the button is made.
-; Not when compiled: the .exe has its own button already, and a shortcut pinned
-; to it only matches windows WITHOUT an id.
-SetWindowAppId(hwnd) {
-    if A_IsCompiled
-        return
-    try {
-        iid := Buffer(16), pk := Buffer(20, 0), pv := Buffer(24, 0), id := "TLDR.Vocab"
-        DllCall("ole32\CLSIDFromString", "wstr", "{886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99}", "ptr", iid)  ; IPropertyStore
-        DllCall("shell32\SHGetPropertyStoreForWindow", "ptr", hwnd, "ptr", iid, "ptr*", &ps := 0, "HRESULT")
-        DllCall("ole32\CLSIDFromString", "wstr", "{9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3}", "ptr", pk)
-        NumPut("uint", 5, pk, 16)                                   ; PKEY_AppUserModel_ID
-        NumPut("ushort", 31, pv, 0), NumPut("ptr", StrPtr(id), pv, 8)  ; VT_LPWSTR
-        ComCall(6, ps, "ptr", pk, "ptr", pv)                        ; SetValue
-        ComCall(7, ps)                                              ; Commit
-    }
-    if IsSet(ps) && ps
-        ObjRelease(ps)
-}
-
-BuildTray() {
-    tm := A_TrayMenu
-    tm.Delete()
-    tm.Add("Open dictionary", (*) => Dict.Toggle())
-    tm.Add()
-    tm.Add("Settings", (*) => Settings.Show())
-    tm.Add("Check for updates", (*) => Update.Check(true))
-    tm.Add("Open the " AppName " folder", (*) => Run('explorer.exe "' A_ScriptDir '"'))
-    tm.Add()
-    tm.Add("Reload", (*) => Reload())
-    tm.Add("Exit", (*) => ExitApp())
-    tm.Default := "Open dictionary"
-    A_IconTip := Keys.TrayText()
-}
-
-; A tray notice that does something when clicked: onClick runs on a click on
-; the notice itself. Only the latest notice's click counts - a newer notice
-; replaces an older one on screen anyway.
-Notice(text, title, onClick := "", icon := 1) {
-    global NoticeClick := onClick
-    OnMessage(0x404, NoticeClicked)             ; the tray icon's own messages
-    TrayTip(text, title, icon)
-}
-
-NoticeClicked(wParam, lParam, *) {
-    global NoticeClick
-    if ((lParam & 0xFFFF) = 0x405 && NoticeClick) {      ; NIN_BALLOONUSERCLICK
-        fn := NoticeClick, NoticeClick := ""
-        fn()
     }
 }
 
@@ -166,4 +107,3 @@ UsableFix(fix, word) {
     return (fix != "" && Lookup.Norm(fix) != Lookup.Norm(word)
         && RegExMatch(fix, "^[A-Za-z][A-Za-z'\- ]{1,40}$") && StrSplit(fix, " ").Length <= 3)
 }
-

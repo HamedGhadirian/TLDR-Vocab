@@ -1,17 +1,53 @@
 # TLDR Vocab
 
-**Point at any English text on your screen and understand it — in plain English and in your own language.**
+**Point at any English text on your screen - a game, a paused video, a web page - and get the meaning, the pronunciation and a translation.**
 
-A word in a game, a line of dialogue in a paused video, a paragraph in a blog: press a key, and a
-small card appears beside it with the meaning, the pronunciation, and the translation. It reads the
-screen itself (Windows' own OCR), so it works on anything you can see — not only on text you can
-select.
+It reads the screen itself (Windows' own OCR), so it works on anything you can see, not only on text you
+can select. Made for learning English while you use it. English → Persian by default, or 18 other
+languages (Settings → Translation).
 
-For Windows 10 and 11. English → Persian by default, or any of 18 other languages (Settings → Translation):
-Arabic, Urdu, Turkish, Spanish, French, German, Italian, Portuguese, Dutch, Polish, Russian, Ukrainian,
-Hindi, Indonesian, Vietnamese, Chinese, Japanese and Korean.
+AutoHotkey v2 · Windows 10 and 11 · no account, no tracking
 
 ![A word looked up on a web page: meaning, pronunciation, the meaning that fits the sentence, and the translation](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/word.png)
+
+## How to use it
+
+| Keys | What it does |
+|---|---|
+| **Win + Click** | The word you click on: meaning, pronunciation, translation, and the meaning that fits its sentence. |
+| **Shift + Win + Click** | **Translate** the sentences around the one you click, in plain English and in your language. |
+| **Ctrl + Win + Click** | **Summary** of the whole block of text under the mouse, in both languages. |
+| **Win + `** | Whatever text is selected (\` is the key left of 1). |
+| **Ctrl + Win + `** | **Check my English** on something *you* wrote. |
+| **Shift + Win + `** | Draw a box: the screen freezes, drag over the text. Good for tooltips that vanish. |
+| **Win + F7** | Your saved word list. **Esc** or a click outside closes a card. |
+
+Every key can be changed or switched off in Settings. **+ save** on a card keeps the word in your list;
+the pin keeps a card on screen.
+
+![The Translate card: the sentences taken, the same thing in simple English, and the translation](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/translate.png)
+
+<details>
+<summary><b>Check my English</b></summary>
+
+Select something you wrote - a chat message, an email - and press **Ctrl + Win + `** (needs Gemini).
+The card shows your text rewritten the way a native speaker would say it, the changed words in green,
+and one short line for each change saying why. **NATURAL | FORMAL** at the top switches between
+everyday and formal English. When a change teaches a phrase you can use again, **+ save** keeps it.
+Your own text is never changed; **copy** puts the rewrite on the clipboard.
+
+Select a single word to ask "is this word right here?".
+
+</details>
+
+<details>
+<summary><b>Summary and the word list</b> (pictures)</summary>
+
+![The Summary card: a paragraph in simple English, its translation, and what the screen reading actually read](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/summary.png)
+
+![The word list: saved words with their translations, and everything kept for the one picked](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/wordlist.png)
+
+</details>
 
 ## Download
 
@@ -19,206 +55,53 @@ From the [latest release](https://github.com/HamedGhadirian/TLDR-Vocab/releases/
 
 | File | For |
 |---|---|
-| `TLDR-Vocab-x.y.z-portable.zip` | **Most people.** Nothing to install: unzip anywhere, double-click `Start TLDR Vocab.bat`. |
-| `TLDR-Vocab-x.y.z.zip` | If you already have [AutoHotkey v2](https://www.autohotkey.com/) installed: unzip, double-click `Vocab.ahk`. |
+| `TLDR-Vocab-x.y.z-portable.zip` | **Most people.** Unzip anywhere, run `Start TLDR Vocab.bat`. Nothing to install. |
+| `TLDR-Vocab-x.y.z.zip` | If you already have [AutoHotkey v2](https://www.autohotkey.com/download/): unzip, run `Vocab.ahk`. |
 
-A dictionary icon appears in the tray. Right-click it for Settings — or click the gear in the word list.
+A dictionary icon shows up in the tray. Double-click it for your word list; right-click it for
+**Settings**, **Start with Windows**, **Run as administrator**, **Look for updates now** and **Help**.
 
-## The keys
+## Settings
 
-All of them can be changed — or switched off — in Settings.
+Tray icon > **Settings**. Everything is saved the moment you change it and works at once.
 
-| Keys | What it does |
-|---|---|
-| **Win + Click** | The word you click on: meaning, pronunciation, translation, and the meaning that fits the sentence it is in. The click never reaches the window underneath. |
-| **Shift + Win + Click** | **Translate a passage**: the sentences around the one you click, explained in plain English and translated — up to ten, stopping at a line that ends with `. ! ? : ;`. Or only the sentence you click: Settings → Translation. |
-| **Ctrl + Win + Click** | **Summary**: the whole block of text under the mouse, summarised in both languages — a game note, a blog post. |
-| **Win + `** | Whatever text is selected (\` is the key left of 1). |
-| **Ctrl + Win + `** | **Check my English**: select something *you* wrote and get a quick check — see below. |
-| **Shift + Win + `** | Draw a box: the screen freezes and dims, drag a rectangle over the text, let go. Only what is inside is read — and since the screen froze when you pressed the key, a tooltip that vanishes when the mouse moves is still there to box. |
-| **Win + F7** | Your saved word list. |
-| **Esc** | Closes the card. A click outside it does too. |
+- **General**: dark or light theme, Start with Windows, Run as administrator, the update check.
+- **Keys**: click **change** next to one and press the keys you want.
+- **Translation**: the language, and how much Translate takes.
+- **Gemini** (optional, free): without a key, words, translations and pronunciation all work. With one
+  you also get sentences explained, summaries, the meaning that fits the sentence and Check my English.
+  Click **get a free key**, sign in with Google, paste it, click **test**. The key stays on your PC.
+- **Network**: an HTTP proxy, if you need one. **Sound**: say each word out loud.
 
-**Translate a passage** — the sentences around the one you click, in plain English and in your language:
-
-![The Translate card: the sentences taken, the same thing in simple English, and the translation](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/translate.png)
-
-**Summary** — a whole block of text, shortened in both languages:
-
-![The Summary card: a paragraph in simple English, its translation, and what the screen reading actually read](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/summary.png)
-
-The selection and the box pick the card by length: a few words get the dictionary, a sentence or so
-gets Translate, anything longer gets Summary. Wrong guess? Click **TRANSLATE | SUMMARY** at the top
-of the card to redo the same text the other way.
-
-**Pin a card** to keep it: the pin at its top right leaves it on screen, where you can drag it anywhere, and
-its × closes it. The next lookup opens a new card beside it, so you can keep several at once.
-
-## Check my English
-
-Select something you wrote — a chat message, an email, a post — and press **Ctrl + Win + `**
-(needs Gemini). Gemini rewrites it the way a native speaker would say it, and the card shows:
-
-- **NATURAL | FORMAL** at the top: everyday, spoken English (the default) or formal English, like an
-  email to a manager. Click the other one to see your text that way too;
-- **your text rewritten**, with the changed words in green and a **copy** button — it never changes
-  your text itself. "Nothing to change" when it is already right;
-- **what changed, and why**, one short point for each change;
-- **what a reader might think** it means — only when it could be misread;
-- a **phrase or sentence pattern to learn**, when one of the changes has one — **+ save** keeps it in
-  your word list.
-
-Select a **single word** to ask "is this word right here?". The sentence around it is read straight from
-the text box (Windows' UI Automation, no screen reading), so the mouse does not have to be over it.
-
-## Your word list
-
-**+ save** on any card keeps the word, the meaning you picked, its translation and the sentence you found
-it in. **Win + F7** opens the list: search it, click a word to see everything kept for it, or type a word
-and press Enter to look it up online. The gear opens Settings.
-
-![The word list: saved words with their translations, and everything kept for the one picked](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/wordlist.png)
-
-## Gemini (optional, free)
-
-Without a key, word lookups, translations and pronunciation all work. With a free Gemini key you also get
-sentences explained in plain English, summaries, and the meaning of a word that fits where you
-found it.
-
-1. Right-click the tray icon → **Settings**
-2. Click **get a free key** — sign in with Google, press *Create API key*
-3. Paste it into the Key box and click **test**
-
-Your key stays in `Vocab.ini` on your PC. It is never part of this repository or its downloads.
+It's all in `Vocab.ini` beside the script too, if you'd rather edit a file.
 
 ![Settings: the language, the Gemini key, the proxy, and every key shown with a change button](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/settings.png)
 
-## Where the answers come from
+## Good to know
 
-- **Definitions:** [freedictionaryapi.com](https://freedictionaryapi.com), Wiktionary, Datamuse
-- **Translations and the spoken words:** Google Translate's free web addresses, with Lingva and MyMemory
-  as fallbacks. These are the addresses Google's own website uses, not an official service: they
-  work, but could change or be blocked at any time — the fallbacks, and the Windows voice, then take
-  over.
-- **Explanations and summaries:** Gemini, with your key
-
-Once a day it also asks GitHub whether there is a newer version of TLDR Vocab, and tells you if there
-is — nothing is downloaded or changed unless you click **Update now**. Settings → General switches the
-check off.
-
-Behind a VPN, the *Proxy* setting follows Windows' own proxy by default. It takes **HTTP** proxies only
-(like `127.0.0.1:10809`) — SOCKS proxies do not work.
-
-## Files it makes, all in its own folder
-
-| File | What |
-|---|---|
-| `Vocab.ini` | your settings and Gemini key |
-| `words.json` | the words you save — plain, readable JSON |
-| `backups\` | a copy of `words.json` from each day you saved words: the last 10, plus one a month for 6 months. To go back, quit TLDR Vocab and copy one over `words.json` |
-| `cache\` | definitions and pronunciations, so a repeat is instant |
-| `errors.log` | only if something goes wrong |
-| `previous version\` | after an update: the version before it |
-
-To remove it: quit from the tray icon and delete the folder (and the Startup shortcut, if you made one).
-
-## Start with Windows
-
-TLDR Vocab does not start with Windows by itself. To make it:
-
-1. Press **Win + R**, type `shell:startup` and press Enter. The Startup folder opens.
-2. In the TLDR Vocab folder, right-click **Start TLDR Vocab.bat** (portable) or **Vocab.ahk** (with AutoHotkey
-   installed) and choose **Show more options → Create shortcut**.
-3. Move the new shortcut into the Startup folder.
-
-From the next sign-in it starts on its own. To stop that, delete the shortcut from the Startup folder.
-
-*Start as administrator* in Settings is off unless you turn it on. With it on, Windows asks for permission at
-every sign-in. It is only needed for the selection key in programs that themselves run as administrator — so
-leave it off, or use the way below, which starts it as administrator without asking.
-
-### As administrator, without the prompt
-
-Task Scheduler can start TLDR Vocab as administrator at every sign-in, with no prompt: Windows asks once,
-when the task is made. Use this *instead of* the Startup-folder shortcut, not as well.
-
-Start menu → **Task Scheduler** → **Create Task…** (not *Create Basic Task*):
-
-1. **General:** name it *TLDR Vocab*; tick **Run with highest privileges**; keep *Run only when user is logged on*.
-2. **Triggers → New:** *Begin the task:* **At log on**, *Specific user:* you.
-3. **Actions → New:** *Start a program*.
-   - *Program:* `AutoHotkey64.exe` in the TLDR Vocab folder (portable), or
-     `C:\Program Files\AutoHotkey\v2\AutoHotkey64.exe` (AutoHotkey installed)
-   - *Add arguments:* the full path of `Vocab.ahk`, in quotes — `"C:\...\TLDR Vocab\Vocab.ahk"`
-   - *Start in:* the TLDR Vocab folder, without quotes
-
-   With AutoHotkey installed you can instead put `Vocab.ahk` itself as the *Program* and leave the
-   arguments empty: Windows then opens it the way a double-click does. That stops working if `.ahk` files
-   are ever set to open in an editor, which naming `AutoHotkey64.exe` never does.
-4. **Conditions:** untick **Start the task only if the computer is on AC power** — or a laptop on battery
-   never starts it.
-5. **Settings:** untick **Stop the task if it runs longer than 3 days** — or Windows closes TLDR Vocab
-   after three days.
-
-To undo it: find *TLDR Vocab* in the Task Scheduler Library and delete it.
-
-If you move the TLDR Vocab folder, make the task again: it points at the old place.
-
-## Known limits
-
-- **Exclusive-fullscreen games** can't show the card or the box — Windows draws nothing over them.
-  Use the game's *borderless* or *windowed fullscreen* mode.
-- **Translate** takes text by its punctuation. A line without any runs on into the next one; for an
-  exact piece of text, draw a box.
+- **Where the answers come from**: freedictionaryapi.com, Wiktionary and Datamuse for definitions;
+  Google Translate's free web addresses (with Lingva and MyMemory as fallbacks) for translations and
+  the spoken words; Gemini, with your key, for explanations. The Google addresses aren't an official
+  service, so they could change one day - the fallbacks take over.
+- **Updates**: once a day it asks GitHub whether there's a newer version. **Update now** swaps the files
+  in about ten seconds and keeps your words and settings; the old version stays in `previous version\`.
+  Nothing installs without your click. Updating with one click works from 1.2.0 on.
+- **Your files** stay in its own folder: `words.json` (your words, plain JSON), daily copies in
+  `backups\`, `Vocab.ini`, and a `cache\` that makes repeats instant. To remove it, untick Start with
+  Windows, quit, delete the folder.
+- **Run as administrator** is only needed for the selection key in programs that run as administrator.
+- **Exclusive-fullscreen games** can't show the card - use borderless or windowed fullscreen.
 - The screen reading is English only.
 
-## Updating
+## The code
 
-Your words, settings and saved lookups are never part of a download, so updating never touches them.
+`Vocab.ahk` only starts things; the app is in `lib\` (`lib\All.ahk` lists what each file does). The
+settings window, tray menu, keys, Start with Windows and updates come from `lib\Kit`, shared by a small
+family of apps. Tests: `tests\run-tests.ps1`. Why things are the way they are: `docs\decisions.md`.
 
-**With one click.** When a new version is out, a notice says so (once a day; Settings → General can switch
-that off, or check now). Click it: a window shows what is new. **Update now** downloads the new version,
-checks every file against the check sums published with it, closes TLDR Vocab, swaps the files and starts
-it again — about ten seconds. If anything goes wrong on the way, nothing is changed; if the new version
-does not start, the old one is put back by itself. The version you had is kept in the **previous version**
-folder: to go back, copy what is in it over the TLDR Vocab folder.
+Design and direction: **HamedGhadirian**. Code written with Claude (Anthropic). Testing and feedback:
+[life2088](https://github.com/life2088) - thank you. Icon: [Dictionary icons created by Magnific - Flaticon](https://www.flaticon.com/free-icons/dictionary).
+The portable zip includes [AutoHotkey](https://github.com/AutoHotkey/AutoHotkey) 2.0 (GNU GPL v2, see
+`AutoHotkey license.txt` in that zip).
 
-![The update window: what is new, with Update now, Download page and Not now](https://raw.githubusercontent.com/HamedGhadirian/TLDR-Vocab/main/docs/images/update.png)
-
-**By hand**, if you prefer:
-
-1. Right-click the tray icon → **Exit**.
-2. Download the new zip (the same kind you have — portable or not) and unzip it **into the same folder**.
-   When Windows asks, choose **Replace the files in the destination**.
-3. Start TLDR Vocab again.
-
-Updating with one click works from 1.2.0 on. From an older version, update by hand once.
-
-## For developers
-
-```
-Vocab.ahk        starts everything
-lib\             the app - lib\All.ahk lists what each file does
-tests\           run-tests.ps1: syntax check, logic tests, screen tests
-tools\           OcrDebug.ahk - see what the OCR sees
-docs\            decisions.md - why things are the way they are
-build.ps1        builds both zips into dist\
-```
-
-Written for AutoHotkey v2.0.
-
-## Credits
-
-Design and direction: **HamedGhadirian**. Code written with Claude (Anthropic), via Claude Code.
-
-Testing and feedback: [life2088](https://github.com/life2088) — thank you.
-
-The icon: [Dictionary icons created by Magnific - Flaticon](https://www.flaticon.com/free-icons/dictionary).
-
-The portable download includes [AutoHotkey](https://www.autohotkey.com/) 2.0, free software under
-the GNU GPL v2 — see `AutoHotkey license.txt` in that zip, and its source at
-[github.com/AutoHotkey/AutoHotkey](https://github.com/AutoHotkey/AutoHotkey).
-
-## License
-
-[MIT](LICENSE) © 2026 HamedGhadirian
+MIT - see [LICENSE](LICENSE).

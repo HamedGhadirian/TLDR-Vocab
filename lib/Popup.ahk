@@ -152,7 +152,7 @@ class PopupCard {
             this.pane.Show(h)
             if !this.visible {
                 DwmAttr(this.g.Hwnd, 33, 2)                 ; rounded corners (Windows 11)
-                DwmAttr(this.g.Hwnd, 34, 0x402F2A)          ; border in CTrack (BGR)
+                DwmAttr(this.g.Hwnd, 34, BorderColour())       ; border in CTrack
             }
             this.h := h, this.visible := true
         } finally
@@ -198,6 +198,23 @@ class PopupCard {
         }
         this.g.Hide()
         this.pane.Clear()
+    }
+
+    ; After the theme changed: the live card closes, and the pinned ones are
+    ; drawn again where they are, in the new colours
+    static Retheme() {
+        Popup.Close()
+        for card in [Popup, PopupCard.pinned*] {
+            if !card.g
+                continue
+            card.g.BackColor := CCard
+            card.pane.bg := CCard
+            card.pane.bar.Opt("+Background" CDim)
+            if card.isPinned {
+                card.Render()
+                DwmAttr(card.g.Hwnd, 34, BorderColour())
+            }
+        }
     }
 
     ; This card stays on screen, and the next lookup gets a new live card
@@ -273,7 +290,7 @@ class PopupCard {
     ; A pinned card is dragged by any part of it that is not a link: the click
     ; is handed to Windows as a click on a title bar (WM_LBUTTONDOWN)
     static DragPinned(wParam, lParam, msg, hwnd) {
-        if LinkHwnds.Has(hwnd)
+        if KitUi.links.Has(hwnd)
             return
         root := DllCall("GetAncestor", "ptr", hwnd, "uint", 2, "ptr")     ; GA_ROOT
         for card in PopupCard.pinned

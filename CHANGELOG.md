@@ -2,6 +2,26 @@
 
 Each version's notes. The release on GitHub is built from the section with its number.
 
+## 1.4.0 — 2026-11-14
+
+- **Light theme.** Settings → General → **Theme**: dark or light. The cards, the word list and Settings all follow.
+- **Start with Windows is a tick** — in the tray menu and in Settings. No more making a shortcut by hand.
+- **As administrator without the prompt.** With *Run as administrator* on as well, it starts at sign-in without Windows asking.
+- **Settings in a new order:** General first, then Keys, then Translation, Gemini, Network and Sound.
+- **The tray menu** has **Help** and **Look for updates now**, and a double-click opens your word list.
+
+<details>
+<summary><b>More</b> (6)</summary>
+
+- **Run as administrator** now switches on at once: TLDR Vocab starts again, and Windows asks once.
+- A new version shows in the tray menu too, as **Get version …**, until you update.
+- *Open the settings file* at the bottom of Settings opens `Vocab.ini`.
+- Made a Startup shortcut or a Task Scheduler task by hand before? Delete it and use the tick, or it starts twice.
+- It runs as its own `Vocab.exe` (made on your PC at the first start, with the dictionary icon), so the tray settings and the firewall list show it by name.
+- Under the hood, the settings window, the keys, the tray menu and updating are now code shared with other apps in the same style. Your words, settings and keys stay as they are.
+
+</details>
+
 ## 1.3.1 — 2026-11-12
 
 - **Update now works again.** The GitHub account behind TLDR Vocab was renamed, and the app refused the new download address. Copies older than this one can't update themselves to it: use **Download page** once.

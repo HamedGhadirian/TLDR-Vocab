@@ -15,7 +15,7 @@
 ; repaint".
 class Dict {
     static g := "", lv := "", search := "", view := "", pane := "", grip := ""
-    static title := "", count := "", setBtn := "", minBtn := "", closeBtn := ""
+    static title := "", count := "", btns := ""
     static countX := 0, split := 0.5, gapY := 0, st := "", delArmed := 0
     static paneRect := "", renderedW := 0, filterer := "", renderer := ""
 
@@ -38,11 +38,10 @@ class Dict {
         this.countX := 18 + tw + 10
         g.SetFont("s9 Norm c" CMuted, FontUI)
         this.count := g.Add("Text", "x" this.countX " y16 w120 BackgroundTrans +0x80", "")
-        g.SetFont("s11 Norm c" CMuted, "Segoe MDL2 Assets")                  ; the gear glyph
-        this.setBtn := Link(g.Add("Text", "x294 y10 w22 Center BackgroundTrans +0x80", Chr(0xE713)), (*) => Settings.Show())
-        g.SetFont("s13 Norm c" CMuted, FontUI)
-        this.minBtn := Link(g.Add("Text", "x320 y6 w22 Center BackgroundTrans +0x80", Chr(0x2013)), (*) => WinMinimize(Dict.g.Hwnd))
-        this.closeBtn := Link(g.Add("Text", "x346 y7 w22 Center BackgroundTrans +0x80", Chr(0xD7)), (*) => Dict.Hide())
+        ; the window buttons: the kit's, the same on every panel (2026-11-13)
+        this.btns := KitWinBtns.Add(g, 300, 14, {settings: () => KitSettings.Show()
+            , min: () => WinMinimize(Dict.g.Hwnd), close: () => Dict.Hide()
+            , bg: CBg, dim: CMuted, hot: CText})
 
         g.SetFont("s10 Norm c" CText, FontUI)
         this.search := g.Add("Edit", "x18 y46 w300 h24 -E0x200 Background" CCardHi)
@@ -54,7 +53,7 @@ class Dict {
         this.lv := g.Add("ListView", "x18 y80 w300 h200 -E0x200 -Hdr -Multi +LV0x10000 Background" CCard
             , ["Word", "Translation", "Meaning"])
         this.lv.OnEvent("ItemSelect", ObjBindMethod(Dict, "OnSelect"))
-        DarkList(this.lv)
+        Theme.Skin(this.lv, "Explorer")
         il := DllCall("comctl32\ImageList_Create", "int", 1, "int", 26, "uint", 0x21, "int", 1, "int", 1, "ptr")
         SendMessage(0x1003, 1, il, this.lv)                          ; LVM_SETIMAGELIST: taller rows
 
@@ -73,7 +72,7 @@ class Dict {
         ; make Windows re-ask WM_NCCALCSIZE now that the handler can answer
         DllCall("SetWindowPos", "ptr", g.Hwnd, "ptr", 0, "int", 0, "int", 0, "int", 0, "int", 0, "uint", 0x37)
         DwmAttr(g.Hwnd, 33, 2)
-        DwmAttr(g.Hwnd, 34, 0x402F2A)
+        DwmAttr(g.Hwnd, 34, BorderColour())
         SetWindowIcon(g.Hwnd)
     }
 
@@ -118,6 +117,24 @@ class Dict {
         this.g.Hide()
     }
 
+    ; After the theme changed (Settings > GENERAL): built again in the new
+    ; colours, and shown again where it was if it was showing - without
+    ; taking the focus.
+    static Retheme() {
+        if !this.g
+            return
+        vis := DllCall("IsWindowVisible", "ptr", this.g.Hwnd)
+        this.SavePos()
+        this.pane.Clear()
+        this.pane.Forget()
+        DropGui(this.view)
+        DropGui(this.g)
+        this.g := "", this.view := "", this.pane := ""
+        this.Build()
+        if vis
+            this.ShowWin(false)
+    }
+
     static SavePos() {
         if (!this.g || !DllCall("IsWindowVisible", "ptr", this.g.Hwnd) || WinGetMinMax(this.g.Hwnd) = -1)
             return                              ; minimized, it sits at -32000
@@ -139,11 +156,9 @@ class Dict {
     ; that share of the height, the pane the rest, each with a floor
     static Layout(w, h) {
         P := this.Pad, top := this.Top
-        x := w - P - 20
-        this.closeBtn.Move(x, 7)
-        this.minBtn.Move(x - 26, 6)
-        this.setBtn.Move(x - 52, 10)
-        this.count.Move(this.countX, 16, Max(0, x - 52 - this.countX - 6))
+        x := w - P - this.btns.Width
+        this.btns.Place(x, 14)
+        this.count.Move(this.countX, 16, Max(0, x - this.countX - 8))
         this.search.Move(P, 46, w - 2 * P, 24)
         avail := h - top - P - this.Gap
         lvH := Max(60, Min(Round(avail * this.split), avail - 140))
@@ -159,7 +174,7 @@ class Dict {
         this.pane.Show(paneH)
         ; A resize here keeps the window's old pixels (that is what answering
         ; WM_NCCALCSIZE with 0 means), and a transparent Text that moves does
-        ; not wipe the spot it left - so the gear, the dash and the cross left
+        ; not wipe the spot it left - so the window buttons left
         ; ghosts of themselves. The header strip is repainted from scratch.
         rc := Buffer(16)
         NumPut("int", 0, "int", 0, "int", w, "int", 42, rc)
@@ -373,35 +388,11 @@ class Dict {
     static DrawEmpty(c, W) {
         f := Flow(c, 14, 14, W - 28)
         f.Text("Pick a word from the list, or type one above and press Enter.", CMuted, "s9 Norm")
-        if (Keys.cur["Word"] != "")
-            f.Text("Anywhere on screen, " Keys.Label(Keys.cur["Word"]) " on a word looks it up, and its + save puts it here."
+        if (KitKeys.Cur("Word") != "")
+            f.Text("Anywhere on screen, " KitKeys.Label(KitKeys.Cur("Word")) " on a word looks it up, and its + save puts it here."
                 , CDim, "s8 Norm")
         return f.y + 10
     }
-}
-
-; Dark scrollbars need the dark theme FORCED: "allow dark" only takes effect
-; when Windows itself is in dark app mode, and in light mode the list came out
-; with white scrollbars. The theme also brings its dark-blue selection and
-; faint lines between the columns; every dark list theme draws those lines.
-;
-; The three helpers are exported by number only, and DllCall cannot call by
-; number - so they are looked up with GetProcAddress and called by address.
-; Each is skipped if this Windows lacks it; the theme is applied regardless.
-; A drop-down list takes the same, with the theme Windows made for combo boxes
-; (Settings' language list: theme "DarkMode_CFD").
-DarkList(lv, theme := "DarkMode_Explorer") {
-    static ux := DllCall("LoadLibrary", "str", "uxtheme.dll", "ptr")
-    static setMode := DllCall("GetProcAddress", "ptr", ux, "ptr", 135, "ptr")   ; SetPreferredAppMode
-    static flush   := DllCall("GetProcAddress", "ptr", ux, "ptr", 136, "ptr")   ; FlushMenuThemes
-    static allow   := DllCall("GetProcAddress", "ptr", ux, "ptr", 133, "ptr")   ; AllowDarkModeForWindow
-    if setMode
-        DllCall(setMode, "int", 2)                                      ; 2 = force dark
-    if flush
-        DllCall(flush)
-    if allow
-        DllCall(allow, "ptr", lv.Hwnd, "int", 1)
-    DllCall("uxtheme\SetWindowTheme", "ptr", lv.Hwnd, "str", theme, "ptr", 0)
 }
 
 DictNcCalc(wParam, lParam, msg, hwnd) {

@@ -5,30 +5,32 @@
 #Include %A_LineFile%\..\Harness.ahk
 
 ;--- keys: what is refused, what is only warned about ---------------------------
-for a in Keys.List                      ; the defaults, without registering them
-    Keys.cur[a.id] := a.def
+; the rules are the kit's (its own tests check them all); these are Vocab's
+; keys going through them
+for a in KitKeys.List()                 ; the defaults, without registering them
+    KitKeys.now[a.id] := a.def
 refused := Map("a", "a letter on its own", "+a", "Shift + a letter", "#vk4C", "Win + L"
     , "!Tab", "Alt + Tab", "!F4", "Alt + F4", "^!Delete", "Ctrl + Alt + Del"
     , "^vk43", "Ctrl + C", "^+Escape", "Ctrl + Shift + Esc", "Space", "Space alone"
     , "LButton", "a plain click", "+#LButton", "another action's key")
 for hk, why in refused
-    CheckTrue("key refused: " why, Keys.Check(hk, "Word").err != "", hk " was accepted")
+    CheckTrue("key refused: " why, KitKeys.Check(hk, "Word").err != "", hk " was accepted")
 for hk in ["#F8", "#MButton", "^!vkBE", "F9", "XButton1", "#vk45"]
-    CheckTrue("key accepted: " hk, Keys.Check(hk, "Word").err = "", Keys.Check(hk, "Word").err)
-Check("key: Win + F8 has no warning", Keys.Check("#F8", "Word").warn, "")
-CheckTrue("key: F9 alone warns", Keys.Check("F9", "Word").warn != "")
-CheckTrue("key: own key is not a conflict", Keys.Check("#LButton", "Word").err = "")
+    CheckTrue("key accepted: " hk, KitKeys.Check(hk, "Word").err = "", KitKeys.Check(hk, "Word").err)
+Check("key: Win + F8 has no warning", KitKeys.Check("#F8", "Word").warn, "")
+CheckTrue("key: F9 alone warns", KitKeys.Check("F9", "Word").warn != "")
+CheckTrue("key: own key is not a conflict", KitKeys.Check("#LButton", "Word").err = "")
 
-Check("label: Shift + Win + Click", Keys.Label("+#LButton"), "Shift + Win + Click")
-Check("label: Win + backtick", Keys.Label("#vkC0"), "Win + ``")
-Check("label: tight", Keys.Label("^!vkBE", true), "Ctrl+Alt+.")
-Check("label: mouse back", Keys.Label("XButton1"), "Mouse back")
-Check("label: off", Keys.Label(""), "none")
-Check("keyname: letter by position", Keys.KeyName(0x41, 0x1E), "vk41")
-Check("keyname: Home", Keys.KeyName(0x24, 0x147), "Home")
-Check("keyname: NumpadHome", Keys.KeyName(0x24, 0x47), "NumpadHome")
-Check("same key written two ways", Keys.Parse("#``").same, Keys.Parse("#vkC0").same)
-tip := Keys.TrayText()
+Check("label: Shift + Win + Click", KitKeys.Label("+#LButton"), "Shift + Win + Click")
+Check("label: Win + backtick", KitKeys.Label("#vkC0"), "Win + ``")
+Check("label: tight", KitKeys.Label("^!vkBE", true), "Ctrl+Alt+.")
+Check("label: mouse back", KitKeys.Label("XButton1"), "Mouse back")
+Check("label: off", KitKeys.Label(""), "none")
+Check("keyname: letter by position", KitKeys.KeyName(0x41, 0x1E), "vk41")
+Check("keyname: Home", KitKeys.KeyName(0x24, 0x147), "Home")
+Check("keyname: NumpadHome", KitKeys.KeyName(0x24, 0x47), "NumpadHome")
+Check("same key written two ways", KitKeys.Parse("#``").same, KitKeys.Parse("#vkC0").same)
+tip := KitTray.Tip()
 CheckTrue("tray tip fits", StrLen(tip) <= 127, StrLen(tip) " characters")
 CheckHas("tray tip has every default key", tip, "word`n", "translate", "summary", "selection", "box", "check", "words")
 
@@ -140,7 +142,7 @@ Check("language: the old cache name stays", Lang.CacheKind(), "fa")
 Lang.current := saved
 answer := '{"simple": "It is red.", "translation": "Es rojo.", "fixed": "", "note": ""}'
 part := Map("text", answer)
-reply := {text: Json.Dump(Map("candidates", [Map("content", Map("parts", [part]))]))}
+reply := {text: KitJson.Dump(Map("candidates", [Map("content", Map("parts", [part]))]))}
 got := AiTrack.Answer("sentence", reply)
 Check("language: Gemini's translation is filed as before", got ? got["persian"] : "", "Es rojo.")
 
@@ -167,7 +169,7 @@ Check("persian: digits inside a word - dropped", Lang.Mend(charbi "12" ash), "")
 Check("persian: numbers beside words stay", Lang.Mend("3" charbi " 1998 " ash " " ash "5"), "3" charbi " 1998 " ash " " ash "5")
 answer := '{"simple": "Watching.", "translation": "' broken '", "fixed": "", "note": ""}'
 part["text"] := answer
-got := AiTrack.Answer("sentence", {text: Json.Dump(Map("candidates", [Map("content", Map("parts", [part]))]))})
+got := AiTrack.Answer("sentence", {text: KitJson.Dump(Map("candidates", [Map("content", Map("parts", [part]))]))})
 Check("persian: ...so the card shows the translator's line", got ? got["simple"] "|" got["persian"] : "", "Watching.|")
 Lang.current := Lang.Find("es")
 Check("persian: other languages are not touched", Lang.Mend(charbi "S" ash), charbi "S" ash)
@@ -180,32 +182,35 @@ CheckTrue("pin: a popup has one", IsObject(PinAction(Popup)))
 ;--- the update check ----------------------------------------------------------
 for pair in [["1.0.1", "1.0.0"], ["1.10.0", "1.2.0"], ["1.1.0", "1.1.0-beta.2"], ["1.1.0-beta.2", "1.1.0-beta.1"]
         , ["1.1.0-beta.10", "1.1.0-beta.2"], ["2.0.0-beta.1", "1.9.9"], ["1.1.0-rc.1", "1.1.0-beta.3"]]
-    Check("update: " pair[1] " is newer than " pair[2], Update.Compare(pair[1], pair[2]) " " Update.Compare(pair[2], pair[1]), "1 -1")
-Check("update: the same version", Update.Compare("1.1.0-beta.2", "1.1.0-beta.2"), 0)
+    Check("update: " pair[1] " is newer than " pair[2], KitUpdate.Compare(pair[1], pair[2]) " " KitUpdate.Compare(pair[2], pair[1]), "1 -1")
+Check("update: the same version", KitUpdate.Compare("1.1.0-beta.2", "1.1.0-beta.2"), 0)
 rel(tag, pre := false, draft := false) => Map("tag_name", "v" tag, "prerelease", pre, "draft", draft, "html_url", "u/" tag)
 list := [rel("1.2.0-beta.1", true), rel("1.1.0"), rel("1.1.0-beta.2", true), rel("1.3.0", false, true), rel("1.0.0")]
-Check("update: a beta hears of a newer beta", Update.Newest(list, "1.1.0-beta.2")["version"], "1.2.0-beta.1")
-Check("update: a finished version hears only of finished ones", Update.Newest(list, "1.0.0")["version"], "1.1.0")
-Check("update: drafts never count, and nothing is newer", Update.Newest(list, "1.2.0-beta.1"), "")
-Check("update: up to date", Update.Newest(list, "1.1.0"), "")
+Check("update: a beta hears of a newer beta", KitUpdate.Newest(list, "1.1.0-beta.2")["version"], "1.2.0-beta.1")
+Check("update: a finished version hears only of finished ones", KitUpdate.Newest(list, "1.0.0")["version"], "1.1.0")
+Check("update: drafts never count, and nothing is newer", KitUpdate.Newest(list, "1.2.0-beta.1"), "")
+Check("update: up to date", KitUpdate.Newest(list, "1.1.0"), "")
 list[1]["body"] := "## New`n- **One** thing", list[1]["assets"] := [Map("name", "manifest.json"
     , "browser_download_url", "https://x/manifest.json", "size", 10, "digest", "sha256:ab")]
-news := Update.Newest(list, "1.1.0-beta.2")
+news := KitUpdate.Newest(list, "1.1.0-beta.2")
 Check("update: the notes and files come along", news["notes"] " | " news["assets"][1]["name"] " " news["assets"][1]["size"]
     , "## New`n- **One** thing | manifest.json 10")
-Check("update: the notes as plain text", Install.NotesText(news["notes"]), "NEW`r`n" Chr(0x2022) " One thing")
+Check("update: the notes as plain text", KitInstall.NotesText(news["notes"]), "NEW`r`n" Chr(0x2022) " One thing")
 Check("update: a folded section reads as a heading"
-    , Install.NotesText("Intro.`n`n<details>`n<summary><b>New</b> (2)</summary>`n`n- one`n- two`n`n</details>")
+    , KitInstall.NotesText("Intro.`n`n<details>`n<summary><b>New</b> (2)</summary>`n`n- one`n- two`n`n</details>")
     , "Intro.`r`n`r`nNEW (2)`r`n`r`n" Chr(0x2022) " one`r`n" Chr(0x2022) " two")
-Check("update: wrapped note lines joined", Install.NotesText("- one`n  two`n  - three"), Chr(0x2022) " one two`r`n  " Chr(0x2022) " three")
+Check("update: wrapped note lines joined", KitInstall.NotesText("- one`n  two`n  - three"), Chr(0x2022) " one two`r`n  " Chr(0x2022) " three")
 
 ;--- updating: what may be written ---------------------------------------------
+; the kit's rules (its tests check them), with Vocab's own files kept: what
+; Vocab.ahk names in keep, the .ini and errors.log
+KitSwap.Keep := KitInstall.Keep()
 for path in ["Vocab.ahk", "lib/Popup.ahk", "lib\Popup.ahk", "AutoHotkey64.exe", "Start TLDR Vocab.bat"]
-    CheckTrue("swap: may write " path, Swap.SafeRel(path))
+    CheckTrue("swap: may write " path, KitSwap.SafeRel(path))
 for path in ["", "../Vocab.ahk", "lib/../../x.ahk", "C:\Windows\x.dll", "\\server\x", "/lib/x.ahk", "Vocab.ini"
         , "words.json", "WORDS.JSON", "errors.log", "cache/a.json", "previous version/Vocab.ahk", ".git/config"
         , "words.unreadable-1.json", "lib/x.ahk.", "lib/x:y"]
-    CheckTrue("swap: may not write [" path "]", !Swap.SafeRel(path))
+    CheckTrue("swap: may not write [" path "]", !KitSwap.SafeRel(path))
 
 ; the release's files: only this app's own, for that version
 release := Map("version", "1.2.0", "assets", [
@@ -213,30 +218,32 @@ release := Map("version", "1.2.0", "assets", [
     Map("name", "a.zip", "url", "https://evil.example/HamedPhixer/TLDR-Vocab/releases/download/v1.2.0/a.zip"),
     Map("name", "b.zip", "url", RepoUrl "/releases/download/v1.1.0/b.zip"),
     Map("name", "old.zip", "url", "https://github.com/HamedPhixer/TLDR-Vocab/releases/download/v1.2.0/old.zip")])
-CheckTrue("install: its own release's file", IsObject(Install.Asset(release, "manifest.json")))
-Check("install: not from another address", Install.Asset(release, "a.zip"), "")
-CheckTrue("install: the account's old name too", IsObject(Install.Asset(release, "old.zip")))
-Check("install: not from another version", Install.Asset(release, "b.zip"), "")
-Check("install: not a file it does not have", Install.Asset(release, "c.zip"), "")
+CheckTrue("install: its own release's file", IsObject(KitInstall.Asset(release, "manifest.json")))
+Check("install: not from another address", KitInstall.Asset(release, "a.zip"), "")
+CheckTrue("install: the account's old name too", IsObject(KitInstall.Asset(release, "old.zip")))
+Check("install: not from another version", KitInstall.Asset(release, "b.zip"), "")
+Check("install: not a file it does not have", KitInstall.Asset(release, "c.zip"), "")
 
 sum := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 entry(path) => Map("path", path, "size", 1, "sha256", sum)
+; (the main script a manifest must have is the one running - here, this test)
 manifest(version := "1.2.0", extra := "") {
-    files := [entry("Vocab.ahk"), entry("lib/All.ahk"), entry("lib/Updater.ahk"), entry("lib/Swap.ahk")]
+    files := [entry(A_ScriptName), entry("lib/All.ahk"), entry("lib/Kit/Kit.ahk"), entry("lib/Kit/Updater.ahk")
+        , entry("lib/Kit/Swap.ahk")]
     if (extra != "")
         files.Push(entry(extra))
     return Map("name", AppName, "version", version, "files", files, "portable", [entry("AutoHotkey64.exe")]
         , "zips", Map("plain", Map("size", 5, "sha256", sum), "portable", Map("size", 6, "sha256", sum)))
 }
-Check("install: a good manifest", Install.CheckManifest(manifest(), "1.2.0", "plain") Install.CheckManifest(manifest(), "1.2.0", "portable"), "")
-Check("install: a portable copy gets AutoHotkey too", Install.Files(manifest(), "portable").Length " " Install.Files(manifest(), "plain").Length, "5 4")
-CheckHas("install: another version's manifest", Install.CheckManifest(manifest("1.3.0"), "1.2.0", "plain"), "1.3.0")
-CheckHas("install: a manifest naming the user's words", Install.CheckManifest(manifest(, "words.json"), "1.2.0", "plain"), "words.json")
-CheckHas("install: a manifest reaching outside", Install.CheckManifest(manifest(, "../x.ahk"), "1.2.0", "plain"), "../x.ahk")
+Check("install: a good manifest", KitInstall.CheckManifest(manifest(), "1.2.0", "plain") KitInstall.CheckManifest(manifest(), "1.2.0", "portable"), "")
+Check("install: a portable copy gets AutoHotkey too", KitInstall.Files(manifest(), "portable").Length " " KitInstall.Files(manifest(), "plain").Length, "6 5")
+CheckHas("install: another version's manifest", KitInstall.CheckManifest(manifest("1.3.0"), "1.2.0", "plain"), "1.3.0")
+CheckHas("install: a manifest naming the user's words", KitInstall.CheckManifest(manifest(, "words.json"), "1.2.0", "plain"), "words.json")
+CheckHas("install: a manifest reaching outside", KitInstall.CheckManifest(manifest(, "../x.ahk"), "1.2.0", "plain"), "../x.ahk")
 m := manifest(), m["zips"].Delete("portable")
-CheckHas("install: no check sum for the zip", Install.CheckManifest(m, "1.2.0", "portable"), "portable zip")
-m := manifest(), m["files"].RemoveAt(3)
-CheckHas("install: a version that could not update itself", Install.CheckManifest(m, "1.2.0", "plain"), "Updater.ahk")
+CheckHas("install: no check sum for the zip", KitInstall.CheckManifest(m, "1.2.0", "portable"), "portable zip")
+m := manifest(), m["files"].RemoveAt(4)
+CheckHas("install: a version that could not update itself", KitInstall.CheckManifest(m, "1.2.0", "plain"), "Updater.ahk")
 
 ; SHA-256, against the published test values
 tmp := A_Temp "\tldr-vocab-test"
@@ -244,10 +251,10 @@ try DirDelete(tmp, true)
 DirCreate(tmp)
 FileAppend("abc", tmp "\abc.txt", "UTF-8-RAW")
 FileAppend("", tmp "\empty.txt")
-Check("sha256: abc", Sha256File(tmp "\abc.txt"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
-Check("sha256: nothing", Sha256File(tmp "\empty.txt"), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+Check("sha256: abc", KitSha256(tmp "\abc.txt"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+Check("sha256: nothing", KitSha256(tmp "\empty.txt"), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
 FileAppend("abc", tmp "\bom.txt", "UTF-8")          ; EF BB BF, then abc
-Check("sha256: every byte, a BOM too", Sha256File(tmp "\bom.txt"), "1c28dc3f1f804a1ad9c9b4b4cf5e2658d16ad4ed08e3020d04a8d2865018947c")
+Check("sha256: every byte, a BOM too", KitSha256(tmp "\bom.txt"), "1c28dc3f1f804a1ad9c9b4b4cf5e2658d16ad4ed08e3020d04a8d2865018947c")
 
 ;--- updating: the swap, for real, in a temp folder ----------------------------
 ; an installed copy with the user's own files, and a new version beside it
@@ -271,14 +278,14 @@ setup() {
 }
 files := ["Vocab.ahk", "lib/All.ahk", "lib/Added.ahk"]
 setup()
-Check("swap: old code the new version dropped", Join(Swap.Leftovers(app, files), ","), "lib\Gone.ahk")
-why := Swap.Apply(app, new, files, Swap.Leftovers(app, files), "about")
+Check("swap: old code the new version dropped", Join(KitSwap.Leftovers(app, files), ","), "lib\Gone.ahk")
+why := KitSwap.Apply(app, new, files, KitSwap.Leftovers(app, files), "about")
 Check("swap: done", why, "")
 Check("swap: the new files", read(app "\Vocab.ahk") "," read(app "\lib\All.ahk") "," read(app "\lib\Added.ahk") "," read(app "\lib\Gone.ahk")
     , "new main,new all,new added,(none)")
 Check("swap: the user's files untouched", read(app "\Vocab.ini") "," read(app "\words.json") "," read(app "\cache\w.json") "," read(app "\errors.log")
     , "my key,my words,my cache,my log")
-bak := app "\" Swap.BackupName
+bak := app "\" KitSwap.BackupName
 Check("swap: the old version kept", read(bak "\Vocab.ahk") "," read(bak "\lib\All.ahk") "," read(bak "\lib\Gone.ahk") "," read(bak "\about this folder.txt")
     , "old main,old all,old gone,about")
 Check("swap: nothing of the user's in the backup", read(bak "\words.json") read(bak "\Vocab.ini"), "(none)(none)")
@@ -287,13 +294,13 @@ Check("swap: nothing of the user's in the backup", read(bak "\words.json") read(
 ; it is undone, and the folder is exactly as before
 setup()
 held := FileOpen(app "\lib\All.ahk", "r -rwd")
-why := Swap.Apply(app, new, files, Swap.Leftovers(app, files))
+why := KitSwap.Apply(app, new, files, KitSwap.Leftovers(app, files))
 held.Close()
 CheckTrue("swap: a locked file fails the update", why != "", "no failure reported")
 Check("swap: ...and everything is as before", read(app "\Vocab.ahk") "," read(app "\lib\All.ahk") "," read(app "\lib\Gone.ahk") "," read(app "\lib\Added.ahk")
     , "old main,old all,old gone,(none)")
 Check("swap: ...the user's files too", read(app "\Vocab.ini") "," read(app "\words.json"), "my key,my words")
-Check("swap: a list naming the user's words is refused whole", Swap.Apply(app, new, ["Vocab.ahk", "words.json"], [])
+Check("swap: a list naming the user's words is refused whole", KitSwap.Apply(app, new, ["Vocab.ahk", "words.json"], [])
     , "the new version names a file it may not write: words.json")
 Check("swap: ...before anything changed", read(app "\Vocab.ahk") "," read(app "\words.json"), "old main,my words")
 try DirDelete(tmp, true)
@@ -301,17 +308,18 @@ try DirDelete(tmp, true)
 ; no connection at all (a proxy on a closed port): the check tries twice,
 ; a few seconds apart, then says so
 IniWrite("127.0.0.1:9", VocabIni(), "Network", "Proxy")
-try IniDelete(VocabIni(), "General", "LastUpdateCheck")
+stamp := KitUpdate.Stamp()
+stampWas := FileExist(stamp) ? FileGetTime(stamp) FileRead(stamp) : "(none)"
 said := Map()
 start := A_TickCount
-Update.Check(false, (text, found) => said["text"] := text)
+KitUpdate.Check(false, (text, found) => said["text"] := text)
 while (!said.Has("text") && A_TickCount - start < 40000)
     Sleep(100)
 IniDelete(VocabIni(), "Network", "Proxy")
 CheckHas("update: no connection says so", said.Has("text") ? said["text"] : "(no answer)", "Could not reach GitHub")
 CheckTrue("update: ...after a second try", A_TickCount - start >= 3000, (A_TickCount - start) " ms")
 Check("update: a day GitHub was not reached is not marked checked"
-    , IniRead(VocabIni(), "General", "LastUpdateCheck", "(none)"), "(none)")
+    , FileExist(stamp) ? FileGetTime(stamp) FileRead(stamp) : "(none)", stampWas)
 
 Check("network error: no double brackets",Http.Short("(0x80072EFD)"), "0x80072EFD")
 Check("network error: the text kept", Http.Short("0x80072EE2 - The operation timed out`r`n"), "The operation timed out")
@@ -410,7 +418,7 @@ Listed(names*) {
     for n in names
         ms.Push(Map("name", "models/" n, "supportedGenerationMethods", ["generateContent"]))
     ms.Push(Map("name", "models/gemini-3.9-flash-image", "supportedGenerationMethods", ["generateContent"]))
-    return {text: Json.Dump(Map("models", ms))}
+    return {text: KitJson.Dump(Map("models", ms))}
 }
 Check("gemini: the second-newest Flash first, the newest last"
     , Join(AiTrack.PickModels(Listed("gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.7-flash"
@@ -571,7 +579,7 @@ WordsFile(names*) {
     words := []
     for n in names
         words.Push(Map("word", n))
-    return Json.Dump(Map("version", 1, "words", words))
+    return KitJson.Dump(Map("version", 1, "words", words))
 }
 FileAppend(WordsFile("apple", "bank"), Store.Path, "UTF-8-RAW")
 Store.Load()
@@ -617,7 +625,7 @@ Store.Path := A_ScriptDir "\words.json", Store.BackupDir := A_ScriptDir "\backup
 try DirDelete(tmp, true)
 
 ;--- Check my English ------------------------------------------------------------
-CheckTrue("check: its key is usable", Keys.Check(Keys.Find("Check").def, "Check").err = "", Keys.Check(Keys.Find("Check").def, "Check").err)
+CheckTrue("check: its key is usable", KitKeys.Check(KitKeys.Find("Check").def, "Check").err = "", KitKeys.Check(KitKeys.Find("Check").def, "Check").err)
 Check("check: what was written, tidied", CheckText("i  think`r`n`r`n`r`n  it was ok `t too`r`n"), "i think`n`nit was ok too")
 Check("check: the sentence a word is in", SentenceAt("I went there. Me and him goed home. Then bed.", 18), "Me and him goed home.")
 
@@ -634,7 +642,7 @@ CheckHas("check prompt: a word alone", AiTrack.Prompt({word: "goed", context: ""
 CheckTrue("check: no translator asked", !FaTrack({word: "I am agree.", query: "i am agree.", context: "", mode: "check"}).enabled
     && !FaTrack({word: "I am agree.", query: "i am agree.", context: "", mode: "formal"}).enabled)
 
-CheckReply(j) => {text: Json.Dump(Map("candidates", [Map("content", Map("parts", [Map("text", j)]))]))}
+CheckReply(j) => {text: KitJson.Dump(Map("candidates", [Map("content", Map("parts", [Map("text", j)]))]))}
 got := AiTrack.Answer("check", CheckReply('{"better": "I agree with you.", "points": ["am agree -> agree: agree is a verb", ""], "reader": "They agree.", "pattern": "I agree with you, but ...", "pattern_use": "to agree and add a doubt", "pattern_example": "I agree with you, but it is late."}'))
 Check("check answer: read", got ? got["better"] "|" got["points"].Length "|" got["pattern"] : "(none)"
     , "I agree with you.|1|I agree with you, but ...")
@@ -703,5 +711,71 @@ Check("clean word: nothing but punctuation", CleanWord("..."), "")
 CheckTrue("Gemini fix: a real correction", UsableFix("teaching", "eachin"))
 CheckTrue("Gemini fix: same word is ignored", !UsableFix("Teaching", "teaching"))
 CheckTrue("Gemini fix: a sentence is ignored", !UsableFix("this is not a word at all", "word"))
+
+;--- on the kit: what Vocab hands it -------------------------------------------
+t := VocabIniTemplate()
+CheckTrue("template: plain ASCII", !RegExMatch(t, "[^\x00-\x7F]"), "a character past ASCII")
+tmp := A_Temp "\tldr-vocab-test-ini"
+try DirDelete(tmp, true)
+DirCreate(tmp)
+ini := CfgSeed(tmp "\Vocab.ini", t)
+Check("template: a new download's defaults"
+    , CfgStr(ini, "Gemini", "ApiKey", "?") "|" CfgStr(ini, "Network", "Proxy", "?") "|" CfgStr(ini, "General", "Theme", "?")
+    . "|" CfgStr(ini, "General", "RunAsAdmin", "?") "|" CfgStr(ini, "General", "StartWithWindows", "?")
+    . "|" CfgStr(ini, "General", "CheckUpdates", "?")
+    , "|auto|dark|0|0|1")
+missing := ""
+for r in VocabRows()
+    if (r.HasProp("key") && CfgStr(ini, r.sect, r.key, "(none)") != String(r.def))
+        missing .= r.sect "/" r.key " "
+Check("template: a line for every row, with the row's default", missing, "")
+try DirDelete(tmp, true)
+CheckTrue("version: MAJOR.MINOR.PATCH", RegExMatch(VocabVersion, "^\d+\.\d+\.\d+(-[\w.]+)?$"))
+
+; copies before 1.4.0 update only to a version that has these (lib\Updater.ahk)
+root := RegExReplace(A_ScriptDir, "\\[^\\]+$")
+missing := ""
+for need in ["Vocab.ahk", "lib\All.ahk", "lib\Updater.ahk", "lib\Swap.ahk"]
+    if !FileExist(root "\" need)
+        missing .= need " "
+Check("update: what copies before 1.4.0 look for is there", missing, "")
+Check("kit: the taskbar button keeps its old id", KitTaskbar.Default(), "TLDR.Vocab")
+Check("kit: the dictionaries see the same User-Agent", KitHttp.Agent(), Http.UA)
+Check("kit: words in a web address", Http.Enc("a b/" Chr(0x6A9)), "a%20b%2F%DA%A9")
+CheckHas("kit: an update never writes your words", KitJoin(KitInstall.Keep(), ","), "Vocab.ini", "errors.log", "words.json", "cache", "backups")
+
+; dark or light: the cards' colours follow the kit's palette
+Theme.Use("light"), VocabColours()
+Check("theme: light", CBg "|" CText "|" CBlue, Theme.Palettes["light"].Bg "|" Theme.Palettes["light"].Text "|" Theme.Palettes["light"].Blue)
+Theme.Use("dark"), VocabColours()
+Check("theme: dark, Vocab's own colours as before", CBg "|" CCard "|" CText "|" CGreen, "181B24|202430|EBEEF5|00E676")
+Check("theme: the border colour, as Windows wants it", Format("0x{:06X}", BorderColour()), "0x402F2A")
+
+; the settings window, built but never shown: every row, every key, the key box
+KitStartup.Dir := A_Temp, KitStartup.Folder := "\VocabTest" A_TickCount
+IniWrite("test-key-123", VocabIni(), "Gemini", "ApiKey")
+IniWrite("1", VocabIni(), "Translation", "Sentences")
+KitSettings.Build()
+KitSettings.Sync()
+texts := ""
+for ctl in KitSettings.pane.content
+    try texts .= ctl.Text "`n"
+missing := ""
+for r in VocabRows()
+    if (r.HasProp("label") && !InStr(texts, r.label))
+        missing .= r.label " / "
+for a in KitKeys.List()
+    if !InStr(texts, a.name)
+        missing .= a.name " / "
+Check("settings window: every row and key is in it", missing, "")
+CheckHas("settings window: the kit's part and the key box", texts, "GENERAL", "Theme", "Start with Windows"
+    , "Run as administrator", "Look for updates", "KEYS", "Win + Click", "get a free key", "test")
+Check("settings window: the key box shows the saved key", GeminiRow.key.Value, "test-key-123")
+Check("settings window: the passage as saved", TranslateScope(), 1)
+GeminiRow.key.Value := " another-key "
+GeminiRow.Save()
+Check("settings window: a key typed is saved, trimmed", IniRead(VocabIni(), "Gemini", "ApiKey", ""), "another-key")
+KitSettings.Drop()
+IniDelete(VocabIni(), "Gemini", "ApiKey"), IniDelete(VocabIni(), "Translation", "Sentences")
 
 Done()

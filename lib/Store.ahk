@@ -50,7 +50,7 @@ class Store {
     ; the words in a file, or "" when it is not a readable words file
     static Read(path) {
         try {
-            w := Dig(Json.Parse(FileRead(path, "UTF-8")), "words")
+            w := Dig(KitJson.Parse(FileRead(path, "UTF-8")), "words")
             if (w is Array)
                 return w
         }
@@ -59,7 +59,7 @@ class Store {
 
     static Save() {
         Store.Backup()
-        try WriteFileAtomic(Store.Path, Json.Dump(Map("version", 1, "words", Store.words), "  "))
+        try WriteFileAtomic(Store.Path, KitJson.Dump(Map("version", 1, "words", Store.words), "  "))
         catch as e {
             VocabLog("saving words.json failed: " e.Message)
             TrayTip("Could not save words.json:`n" e.Message, AppName, 3)

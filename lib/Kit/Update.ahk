@@ -1,105 +1,114 @@
 ;================================================================================
-; Update.ahk - is there a newer version?
+; Update.ahk (kit) - is there a newer version?
 ;================================================================================
-; Once a day, two seconds after start, the releases on GitHub are asked for
-; (one small request to its public API, no account, through the same proxy
-; setting as every lookup). If one is newer than VocabVersion, a tray notice
-; says so, and clicking it opens the update window (Install.ahk): what is
-; new, "update now", or the download page for updating by hand. Nothing is
-; downloaded or changed without that click.
+; Once a day, quietly, the script's releases on GitHub are asked for (one
+; small request to its public API, no account). If one is newer than the
+; version running, a tray notice says so and the tray menu gets "Get version
+; X..."; either opens the update window (Install.ahk): what is new, "Update
+; now", or the download page. Nothing is downloaded or changed without that
+; click, and nothing ever takes the focus.
 ;
 ; Which releases count: a test version (a version with a dash, 1.1.0-beta.2)
 ; only for someone already running one. Everyone else hears about finished
 ; versions only - the same rule GitHub's "latest release" link follows.
 ;
 ; Settings > GENERAL switches the daily check off ([General] CheckUpdates=0)
-; and has "check now"; so does the tray menu. A check by hand always answers,
-; "up to date" included; the daily one only speaks when there is news, and
-; says nothing at all when GitHub cannot be reached.
+; and has "check now"; the tray menu has "Look for updates now". A check by
+; hand always answers, "up to date" included; the daily one only speaks when
+; there is news, and says nothing at all when GitHub cannot be reached.
 ;
 ; "Once a day" means once per calendar day that GitHub answered, not once per
-; start: Vocab usually starts with Windows and can run for a week, so Daily()
-; is asked again every hour and does nothing unless the date has changed. A
-; day whose check could not reach GitHub is not marked done, so the next hour
-; tries again.
+; start: a script that starts with Windows can run for a week, so Daily() is
+; asked again every hour and does nothing unless the date has changed. The
+; date of the last look is kept in the temp folder, not in the .ini - it
+; means nothing on another PC, and the .ini holds only what you set.
 ;================================================================================
 #Requires AutoHotkey v2.0
 
-class Update {
+class KitUpdate {
     static req := "", poller := "", manual := false, onDone := "", found := "", retried := false
 
     static Start() {
-        SetTimer(() => Update.Daily(), -2000)
-        SetTimer(() => Update.Daily(), 3600000)
+        if (Kit.repo = "")
+            return
+        SetTimer(() => KitUpdate.Daily(), -20000)
+        SetTimer(() => KitUpdate.Daily(), 3600000)
     }
+
+    static Stamp() => A_Temp "\" Kit.Slug "-update-check.txt"
 
     ; once a day, unless switched off
     static Daily() {
-        ini := VocabIni()
-        if (IniRead(ini, "General", "CheckUpdates", 1) != 1)
+        if !CfgBool(Kit.ini, "General", "CheckUpdates", true)
             return
-        if (IniRead(ini, "General", "LastUpdateCheck", "") = FormatTime(, "yyyyMMdd"))
+        last := ""
+        try last := FileRead(KitUpdate.Stamp())
+        if (SubStr(last, 1, 8) = FormatTime(, "yyyyMMdd"))
             return
-        Update.Check(false)
+        KitUpdate.Check(false)
     }
 
     ; manual: asked for by hand - always answers. onDone(text, found) gets the
     ; answer as well, for the settings window's own line. The newer version,
-    ; when there is one, is kept in Update.found for the update window.
+    ; when there is one, is kept in KitUpdate.found for the update window.
     static Check(manual := true, onDone := "") {
-        if Update.req                           ; one check at a time
+        if (Kit.repo = "" || KitUpdate.req)     ; one check at a time
             return
-        Update.manual := manual, Update.onDone := onDone, Update.retried := false
-        Update.Ask()
+        KitUpdate.manual := manual, KitUpdate.onDone := onDone, KitUpdate.retried := false
+        KitUpdate.Ask()
     }
 
     static Ask() {
-        Update.req := Http("https://api.github.com/repos/" RegExReplace(RepoUrl, "^https://github\.com/") "/releases?per_page=20"
+        KitUpdate.req := KitHttp("https://api.github.com/repos/" Kit.repo "/releases?per_page=20"
             , {timeout: 10000, headers: Map("Accept", "application/vnd.github+json")})
-        if !Update.poller
-            Update.poller := ObjBindMethod(Update, "Poll")
-        SetTimer(Update.poller, 200)
+        if !KitUpdate.poller
+            KitUpdate.poller := ObjBindMethod(KitUpdate, "Poll")
+        SetTimer(KitUpdate.poller, 200)
     }
 
     static Poll() {
-        if !Update.req.Poll()
+        if !KitUpdate.req.Poll()
             return
-        SetTimer(Update.poller, 0)
-        r := Update.req
+        SetTimer(KitUpdate.poller, 0)
+        r := KitUpdate.req
         ; no connection at all (not an answer like 404): once more, a few
         ; seconds later - a first connection sometimes fails where the second
         ; works. req stays set meanwhile, so no second check starts.
-        if (r.err != "" && !Update.retried) {
-            Update.retried := true
-            SetTimer(() => Update.Ask(), -3000)
+        if (r.err != "" && !KitUpdate.retried) {
+            KitUpdate.retried := true
+            SetTimer(() => KitUpdate.Ask(), -3000)
             return
         }
-        Update.req := ""
+        KitUpdate.req := ""
         news := ""
         if r.Ok {
-            try IniWrite(FormatTime(, "yyyyMMdd"), VocabIni(), "General", "LastUpdateCheck")
-            try news := Update.Newest(Json.Parse(r.text), VocabVersion)
+            try {
+                FileOpen(KitUpdate.Stamp(), "w").Write(FormatTime(, "yyyyMMdd"))
+            }
+            try news := KitUpdate.Newest(KitJson.Parse(r.text), Kit.version)
         }
         if (!r.Ok || news = "") {
             ok := r.Ok && news = ""
-            text := ok ? "You have the newest version, " VocabVersion "."
-                       : "Could not reach GitHub (" r.Why ")."
-            if !ok
-                VocabLog("Update check: " r.Why)
-            if Update.manual
-                Notice(text, AppName)
-            Update.Tell(text, false)
+            text := ok ? "You have the newest version, " Kit.version "."
+                : (r.status = 404) ? "No published version of " Kit.name " yet."
+                : "Could not reach GitHub (" r.Why ")."
+            if (!ok && r.status != 404 && KitUpdate.manual)     ; the quiet daily look stays quiet in the log too
+                Kit.Log("Update check: " r.Why)
+            if KitUpdate.manual
+                Kit.Notice(text)
+            KitUpdate.Tell(text, false)
             return
         }
-        Update.found := news
-        Notice(AppName " " news["version"] " is out - you have " VocabVersion ". Click to see what is new and update."
-            , AppName ": a new version", () => Install.Offer(news))
-        Update.Tell(AppName " " news["version"] " is out.", true)
+        KitUpdate.found := news
+        KitTray.Build()                         ; "Get version X..."
+        Kit.Notice(Kit.name " " news["version"] " is out - you have " Kit.version
+            . ". Click to see what is new and update.", Kit.name ": a new version", () => KitInstall.Offer(news))
+        KitUpdate.Tell(Kit.name " " news["version"] " is out.", true)
     }
 
     static Tell(text, found) {
-        if Update.onDone
-            Update.onDone.Call(text, found)
+        if KitUpdate.onDone
+            try KitUpdate.onDone.Call(text, found)
     }
 
     ; The newest release in list (GitHub's answer) that is newer than mine, as
@@ -109,13 +118,15 @@ class Update {
     static Newest(list, mine) {
         pre := InStr(mine, "-") > 0
         best := "", files := ""
+        if !(list is Array)
+            return ""
         for rel in list {
             if Dig(rel, "draft")
                 continue
             v := RegExReplace(Dig(rel, "tag_name"), "^v")
             if (v = "" || (Dig(rel, "prerelease") && !pre))
                 continue
-            if (Update.Compare(v, mine) > 0 && (!best || Update.Compare(v, best["version"]) > 0))
+            if (KitUpdate.Compare(v, mine) > 0 && (!best || KitUpdate.Compare(v, best["version"]) > 0))
                 best := Map("version", v, "url", Dig(rel, "html_url"), "notes", Dig(rel, "body"), "assets", [])
                     , files := Dig(rel, "assets")
         }

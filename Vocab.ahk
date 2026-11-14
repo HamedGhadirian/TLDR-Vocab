@@ -6,7 +6,7 @@
 ; would choke on the first line.
 ;
 ; KEYS - the defaults. Any of them can be changed in Settings (tray menu),
-; which records the new ones; see Keys.ahk.
+; which records the new ones; see lib\Config.ahk and the kit's Keys.ahk.
 ;   Win + Click         the word you click on. Works on anything you can
 ;                       see - a web page, a game, a paused video - because it
 ;                       reads the screen around the pointer with Windows' own
@@ -88,10 +88,13 @@
 ;   the cards that need it say so, with a link to the key box.
 ;
 ; THE CODE
-;   This file only starts things. Everything else is in lib\ - lib\All.ahk
-;   lists each part and what it does. tests\ checks them (run-tests.ps1),
-;   tools\ has a helper for looking at what the OCR sees, and
-;   docs\decisions.md explains why things are the way they are.
+;   This file only starts things: one Kit.Start below. The settings window,
+;   the keys, the tray menu, Start with Windows, administrator, the theme and
+;   updates are the kit's (lib\Kit, shared by every script of the family);
+;   everything that is Vocab's own is in lib\ - lib\All.ahk lists each part
+;   and what it does. tests\ checks them (run-tests.ps1), tools\ has a helper
+;   for looking at what the OCR sees, and docs\decisions.md explains why
+;   things are the way they are.
 ;
 ; FILES Vocab makes, all next to this script
 ;   Vocab.ini     settings, the Gemini key, where the window was
@@ -106,7 +109,6 @@
 ;================================================================================
 #Requires AutoHotkey v2.0
 #SingleInstance Force
-Persistent
 #Include %A_LineFile%\..\lib\All.ahk
 
 ; Administrator is optional (Settings > GENERAL, off unless chosen). Without
@@ -115,41 +117,18 @@ Persistent
 ; program send keys to an elevated one. Everything else - reading the screen
 ; included - works the same. If the Windows prompt is declined, Vocab simply
 ; carries on without it.
-if (!A_IsAdmin && IniRead(VocabIni(), "General", "RunAsAdmin", 0) = 1) {
-    try {
-        args := ""
-        for a in A_Args                         ; --updated-from, after an update
-            args .= ' "' a '"'
-        Run('*RunAs "' A_AhkPath '" "' A_ScriptFullPath '"' args)
-        ExitApp
-    }
-}
-
-;================================================================================
-; Start-up
-;================================================================================
+;
+; keep: what is yours beside Vocab.ahk, which an update never writes (the
+; .ini and errors.log always are). appId and agent stay what they were before
+; the kit, so a button pinned to the taskbar and the dictionaries see the same.
 CoordMode("Mouse", "Screen")    ; every thread inherits this
-EnsureIni()
-TrimLog()
-LoadSoundSettings()
-Store.Load()
-SetTimer(() => PronFill.Start(), -5000)
-SetScriptIcon()
-Keys.Start()
-BuildTray()
-NoKeyNotice()
-Update.Start()                          ; once a day, from 2 s after start (Update.ahk)
-SetTimer(() => AiTrack.Warm(), -3000)   ; Gemini's model list, before the first lookup needs it
-Install.Started()                       ; just updated? (Install.ahk)
-OnMessage(0x83, DictNcCalc)             ; WM_NCCALCSIZE
-OnMessage(0x84, DictHitTest)            ; WM_NCHITTEST
-OnMessage(0x86, DictNcActivate)         ; WM_NCACTIVATE
-OnMessage(0x201, DictMouseDown)         ; WM_LBUTTONDOWN - the divider
-OnMessage(0x201, ObjBindMethod(PopupCard, "DragPinned"))   ; - and moving a pinned popup
-OnMessage(0x20A, PaneWheel)             ; WM_MOUSEWHEEL
-OnMessage(0x20, OnSetCursor)            ; WM_SETCURSOR
-OnMessage(0x232, DictMoved)             ; WM_EXITSIZEMOVE
-OnExit((*) => Dict.SavePos())
+Kit.Start({name: AppName, version: VocabVersion, repo: "HamedGhadirian/TLDR-Vocab"
+    , repoWas: ["HamedPhixer/TLDR-Vocab"]       ; the account's name before 2026-11
+    , icon: IconFile, template: VocabIniTemplate(), appId: "TLDR.Vocab", agent: Http.UA
+    , adminWhy: "Only needed for the selection key in programs that themselves run as administrator."
+    , keep: ["words.json", "words.unreadable-*", "backups", "cache"]
+    , init: () => VocabStart(), keys: VocabKeys(), rows: () => VocabRows(), apply: () => VocabApply()
+    , menu: (m) => VocabTray(m), default: "Open dictionary", onTheme: () => VocabTheme()})
 
 ; While the popup is up, a click anywhere outside it closes it. The "~" lets
 ; the click through untouched, so it still does whatever it was for.

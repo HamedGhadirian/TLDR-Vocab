@@ -7,7 +7,7 @@
     manifest.json                       the size and SHA-256 of both zips and of
                                         every file in them - what the app checks
                                         a download against before it updates
-                                        itself (lib\Install.ahk)
+                                        itself (lib\Kit\Install.ahk)
     notes.md                            this version's section of CHANGELOG.md,
                                         the release notes
 
@@ -50,13 +50,24 @@ if (-not $lic) { throw "No AutoHotkey licence (license.txt) in $AhkDir" }
 
 if (Test-Path $dist) { Remove-Item $dist -Recurse -Force }
 New-Item -ItemType Directory $dist | Out-Null
+# the release page starts with which zip to take (the same two lines in
+# every app of the family); the app's own update window leaves them out
+$which = "**Which zip?** Most people: **TLDR-Vocab-$version-portable.zip** - unzip it anywhere and run **Start TLDR Vocab.bat**, nothing to install.`n" +
+    "Already have AutoHotkey v2? **TLDR-Vocab-$version.zip**, then run **Vocab.ahk**.`n`n---`n`n"
+$notes = $which + $notes
 [IO.File]::WriteAllText((Join-Path $dist "notes.md"), $notes + "`n", (New-Object Text.UTF8Encoding $false))
 $stage = Join-Path $dist "stage\TLDR Vocab"
-New-Item -ItemType Directory -Force (Join-Path $stage "lib") | Out-Null
+New-Item -ItemType Directory -Force (Join-Path $stage "lib\Kit") | Out-Null
 
 # the app: what a user needs, nothing of tests\, tools\ or docs\
 Copy-Item (Join-Path $root "Vocab.ahk"), (Join-Path $root "dictionary.png"), (Join-Path $root "README.md"), (Join-Path $root "LICENSE") $stage
+# lib\*.ahk includes Updater.ahk and Swap.ahk, the bridges copies before
+# 1.4.0 look for before they update (see lib\Updater.ahk)
+# the tray's own 16 px picture, when there is one (the kit packs it with the big one)
+$twin = Join-Path $root "dictionary_16x16.png"
+if (Test-Path $twin) { Copy-Item $twin $stage }
 Copy-Item (Join-Path $root "lib\*.ahk") (Join-Path $stage "lib")
+Copy-Item (Join-Path $root "lib\Kit\*.ahk") (Join-Path $stage "lib\Kit")
 
 function Describe($path, $name) {
     $f = Get-Item $path
