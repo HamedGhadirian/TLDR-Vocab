@@ -91,6 +91,9 @@ class KitUpdate {
             ok := r.Ok && news = ""
             text := ok ? "You have the newest version, " Kit.version "."
                 : (r.status = 404) ? "No published version of " Kit.name " yet."
+                ; GitHub answers 60 questions an hour per address without an
+                ; account; past that, 403 or 429 until the hour is over
+                : (r.status = 403 || r.status = 429) ? "GitHub is busy with this PC for now (too many questions this hour). Try again later."
                 : "Could not reach GitHub (" r.Why ")."
             if (!ok && r.status != 404 && KitUpdate.manual)     ; the quiet daily look stays quiet in the log too
                 Kit.Log("Update check: " r.Why)

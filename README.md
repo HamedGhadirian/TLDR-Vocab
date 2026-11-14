@@ -15,8 +15,8 @@ AutoHotkey v2 · Windows 10 and 11 · no account, no tracking
 | Keys | What it does |
 |---|---|
 | **Win + Click** | The word you click on: meaning, pronunciation, translation, and the meaning that fits its sentence. |
-| **Shift + Win + Click** | **Translate** the sentences around the one you click, in plain English and in your language. |
-| **Ctrl + Win + Click** | **Summary** of the whole block of text under the mouse, in both languages. |
+| **Shift + Win + middle-click** | **Translate** the sentences around the one you click, in plain English and in your language. |
+| **Ctrl + Win + middle-click** | **Summary** of the whole block of text under the mouse, in both languages. |
 | **Win + `** | Whatever text is selected (\` is the key left of 1). |
 | **Ctrl + Win + `** | **Check my English** on something *you* wrote. |
 | **Shift + Win + `** | Draw a box: the screen freezes, drag over the text. Good for tooltips that vanish. |

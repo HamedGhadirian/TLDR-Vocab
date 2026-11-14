@@ -12,7 +12,7 @@ for a in KitKeys.List()                 ; the defaults, without registering them
 refused := Map("a", "a letter on its own", "+a", "Shift + a letter", "#vk4C", "Win + L"
     , "!Tab", "Alt + Tab", "!F4", "Alt + F4", "^!Delete", "Ctrl + Alt + Del"
     , "^vk43", "Ctrl + C", "^+Escape", "Ctrl + Shift + Esc", "Space", "Space alone"
-    , "LButton", "a plain click", "+#LButton", "another action's key")
+    , "LButton", "a plain click", "+#MButton", "another action's key")
 for hk, why in refused
     CheckTrue("key refused: " why, KitKeys.Check(hk, "Word").err != "", hk " was accepted")
 for hk in ["#F8", "#MButton", "^!vkBE", "F9", "XButton1", "#vk45"]

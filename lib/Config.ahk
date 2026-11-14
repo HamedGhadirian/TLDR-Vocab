@@ -11,7 +11,7 @@
 ; the notices and the update check. The files keep the short name Vocab.
 global AppName := "TLDR Vocab"
 global RepoUrl := "https://github.com/HamedGhadirian/TLDR-Vocab"     ; the README and the releases
-global VocabVersion := "1.4.0"   ; MAJOR.MINOR.PATCH - a dash makes it a test version
+global VocabVersion := "1.4.1"   ; MAJOR.MINOR.PATCH - a dash makes it a test version
 
 ;--------------------------------------------------------------------------------
 ; The keys - the defaults. Every one can be changed in Settings > KEYS (the
@@ -23,8 +23,8 @@ global VocabVersion := "1.4.0"   ; MAJOR.MINOR.PATCH - a dash makes it a test ve
 ;--------------------------------------------------------------------------------
 VocabKeys() => [
     {id: "Word",      name: "Look up a word",          short: "word",      def: "#LButton",  fn: LookupUnderMouse},
-    {id: "Translate", name: "Translate a passage",     short: "translate", def: "+#LButton", fn: LookupSentenceUnderMouse},
-    {id: "Summary",   name: "Summarise a block",       short: "summary",   def: "^#LButton", fn: LookupParagraphUnderMouse},
+    {id: "Translate", name: "Translate a passage",     short: "translate", def: "+#MButton", fn: LookupSentenceUnderMouse},
+    {id: "Summary",   name: "Summarise a block",       short: "summary",   def: "^#MButton", fn: LookupParagraphUnderMouse},
     {id: "Selection", name: "Look up selected text",   short: "selection", def: "#vkC0",     fn: LookupSelection},
     {id: "Box",       name: "Draw a box to read",      short: "box",       def: "+#vkC0",    fn: LookupBox},
     {id: "Check",     name: "Check my English",        short: "check",     def: "^#vkC0",    fn: CheckSelection},

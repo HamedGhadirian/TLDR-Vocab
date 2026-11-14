@@ -2,7 +2,7 @@
 ; Sentence.ahk - explain a whole sentence instead of one word
 ;================================================================================
 ; The TRANSLATE card; the code calls it "sentence", as saved records do.
-; Shift + Win + Click on any sentence on screen. It is read with the same OCR as the
+; Shift + Win + middle-click on any sentence on screen. It is read with the same OCR as the
 ; word lookup, then shown in plain English and translated. A selection of more
 ; than four words (Win + `) comes here too, since a dictionary has nothing to
 ; say about a sentence.

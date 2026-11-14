@@ -2,6 +2,13 @@
 
 Each version's notes. The release on GitHub is built from the section with its number.
 
+## 1.4.1 — 2026-11-14
+
+- **Translate and Summary moved to the middle button**: **Shift + Win + middle-click** translates, **Ctrl + Win + middle-click** summarises. The left-click ones are Global Scroller's keys now, so the two apps can run side by side. If you never changed these keys, the new ones replace the old; the old ones still work if you set them in Settings → Keys. **Win + click** for a word is the same as before.
+- **Clearer update message**: when GitHub has had too many questions from your connection in the last hour, the update check now says so, instead of "Could not reach GitHub (HTTP 403)".
+- **Fixed**: "Update now" could refuse to finish in some folders; it now works wherever the app is.
+- **The tray tip** fits all the keys again.
+
 ## 1.4.0 — 2026-11-14
 
 - **Light theme.** Settings → General → **Theme**: dark or light. The cards, the word list and Settings all follow.

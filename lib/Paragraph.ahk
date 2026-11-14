@@ -2,7 +2,7 @@
 ; Paragraph.ahk - what does this note actually say?
 ;================================================================================
 ; The SUMMARY card; the code calls it "paragraph".
-; Ctrl + Win + Click anywhere in a block of text: a game's lore note, a blog
+; Ctrl + Win + middle-click anywhere in a block of text: a game's lore note, a blog
 ; paragraph, a wall of patch notes. It comes back as two or three sentences of
 ; plain English and the same translated - five or six for a long text.
 ;

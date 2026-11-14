@@ -14,13 +14,15 @@
 ;                       of any size, from 8 px labels to full-screen subtitles;
 ;                       see WordAtPoint for why that takes three attempts.
 ;                       The click itself never reaches the window underneath.
-;   Shift + Win + Click TRANSLATE a passage: the sentences around the one
+;   Shift + Win +       TRANSLATE a passage: the sentences around the one
+;     middle-click
 ;                       under the mouse - up to ten, ending at any line that
 ;                       ends with a stop; or only that one sentence, in
 ;                       Settings - in plain English and translated. A
 ;                       selection of more than a few words goes here too.
 ;                       See Sentence.ahk
-;   Ctrl + Win + Click  SUMMARY: the whole block of text under the mouse,
+;   Ctrl + Win +        SUMMARY: the whole block of text under the mouse,
+;     middle-click
 ;                       summarised in both languages - a game note, a blog
 ;                       paragraph. The screen is read whole and the block is
 ;                       outlined for a moment so you can see what was taken.
@@ -28,6 +30,8 @@
 ;                       Both cards have TRANSLATE | SUMMARY at the top: the
 ;                       other one redoes the same text the other way, for when
 ;                       the guess by length was wrong. Switching back is free.
+;                       (Until 1.4.0 these two were Shift / Ctrl + Win +
+;                       Click; Global Scroller's keys are those now.)
 ;   Win + `             the selected text instead (copied with Ctrl+C); with
 ;                       nothing selected it falls back to the word under the
 ;                       mouse
