@@ -279,6 +279,10 @@ setup() {
 files := ["Vocab.ahk", "lib/All.ahk", "lib/Added.ahk"]
 setup()
 Check("swap: old code the new version dropped", Join(KitSwap.Leftovers(app, files), ","), "lib\Gone.ahk")
+; the same folder by its short 8.3 name, as GitHub's own computer gives it
+shortBuf := Buffer(65534 * 2)
+shortN := DllCall("GetShortPathNameW", "Str", app, "Ptr", shortBuf, "UInt", 65534, "UInt")
+Check("swap: ...also when the folder comes by its short name", Join(KitSwap.Leftovers(shortN ? StrGet(shortBuf, shortN, "UTF-16") : app, files), ","), "lib\Gone.ahk")
 why := KitSwap.Apply(app, new, files, KitSwap.Leftovers(app, files), "about")
 Check("swap: done", why, "")
 Check("swap: the new files", read(app "\Vocab.ahk") "," read(app "\lib\All.ahk") "," read(app "\lib\Added.ahk") "," read(app "\lib\Gone.ahk")

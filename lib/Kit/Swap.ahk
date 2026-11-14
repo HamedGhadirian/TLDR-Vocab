@@ -141,13 +141,23 @@ class KitSwap {
         keep.CaseSense := false
         for rel in files
             keep[StrReplace(rel, "/", "\")] := true
+        ; both sides in their long form: a folder reached by a short 8.3 name
+        ; (C:\Users\RUNNER~1\...) can list its files under the long one, and
+        ; cutting by length then lands mid-name ("pp\lib\All.ahk")
+        app := KitSwap.LongPath(RTrim(app, "\"))
         out := [], cut := StrLen(app) + 2
         loop files app "\lib\*.ahk", "R" {
-            rel := SubStr(A_LoopFileFullPath, cut)
+            rel := SubStr(KitSwap.LongPath(A_LoopFileFullPath), cut)
             if !keep.Has(rel)
                 out.Push(rel)
         }
         return out
+    }
+
+    static LongPath(path) {
+        buf := Buffer(65534 * 2)
+        n := DllCall("GetLongPathNameW", "Str", path, "Ptr", buf, "UInt", 65534, "UInt")
+        return (n && n < 65534) ? StrGet(buf, n, "UTF-16") : path
     }
 
     static Parent(path) {
