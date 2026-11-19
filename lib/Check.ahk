@@ -263,9 +263,10 @@ RenderCheck(g, W, st, owner) {
     else if !lk.ai.done
         f.Text(lk.ai.Waiting, CDim, "s9 Norm Italic")
     else if !ai
-        f.Text("Gemini: " lk.ai.note, CDim, "s8 Norm Italic")
+        f.Text(lk.ai.Who ": " lk.ai.note, CDim, "s8 Norm Italic")
     else
         CheckAnswer(f, st, owner, ai, one)
+    CfEndsLine(f, lk)
 
     if (st.HasProp("cut") && st.cut)
         f.Text("The text was long: only its first part was checked, down to the end of YOU WROTE.", CAmber, "s8 Norm")

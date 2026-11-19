@@ -571,6 +571,193 @@ AiTrack.chain := "", AiTrack.listed := "", AiTrack.loaded := false
 AiTrack.LoadState()
 Check("gemini: ...and so is today's, lined up the old way", AiTrack.chain, "")
 try FileDelete(AiTrack.StateFile)
+
+;--- Cloudflare: the other side, second in line (still no network) -----------------
+AiTrack.chain := ["model-a", "model-b"], AiTrack.resting := Map(), AiTrack.loaded := true
+AiTrack.listed := FormatTime(, "yyyyMMdd"), AiTrack.cfAccount := "", AiTrack.cfFor := "", AiTrack.cfBad := ""
+AiTrack.cfEnds := "", AiTrack.cfEndsTried := "12345678"     ; no asking when the token ends: no network here
+AiTrack.cfChain := "", AiTrack.cfListed := FormatTime(A_NowUTC, "yyyyMMdd")   ; ...nor for Cloudflare's list
+IniWrite("cf-token-12345678", VocabIni(), "Cloudflare", "Token")
+CF := AiTrack.CfModel
+Check("cloudflare: second in line, after the model that leads", Join(AiTrack.Models(true, true), ","), "model-a," CF ",model-b")
+Check("cloudflare: ...the only one without a Gemini key", Join(AiTrack.Models(false, true), ","), CF)
+Check("cloudflare: short name", AiTrack.Short(CF), "Cloudflare GPT-OSS-120B")
+IniWrite(CF, VocabIni(), "Gemini", "Model")
+Check("cloudflare: picked in Settings - first", Join(AiTrack.Models(true, true), ","), CF ",model-a,model-b")
+IniWrite("flash", VocabIni(), "Gemini", "Model")
+Check("model: a name Google does not use is never asked for", GeminiModel(), "")
+IniWrite("gemini-3.5-flash-lite", VocabIni(), "Gemini", "Model")
+Check("model: a real one leads, Cloudflare next", Join(AiTrack.Models(true, true), ","), "gemini-3.5-flash-lite," CF ",model-a,model-b")
+IniDelete(VocabIni(), "Gemini", "Model")
+AiTrack.chain := ""
+Check("cloudflare: no Gemini list yet - the guesses, not a wait for it", Join(AiTrack.Models(true, true), ",")
+    , "gemini-flash-latest," CF ",gemini-flash-lite-latest")
+AiTrack.chain := ["model-a", "model-b"]
+
+; the first lookup with a token asks for its account, then the question
+IniWrite(CF, VocabIni(), "Gemini", "Model")
+t := AiTrack({word: "bank", context: "", mode: "word"})
+Check("cloudflare: a new token - its account first", t.steps[1].kind, "cfacct")
+Check("cloudflare: ...and the card says who is asked", t.Waiting, "asking Cloudflare" Chr(0x2026))
+CfOk(text) => {err: "", status: 200, Ok: true, Why: "HTTP 200", text: text}
+CfFail(status, text) => {err: "", status: status, Ok: false, Why: "HTTP " status, text: text}
+acct := CfOk('{"result": [{"id": "acc123"}], "success": true}')
+Check("cloudflare: the account read from its answer", AiTrack.CfAccountOf(acct), "acc123")
+t.Got(t.steps[1], acct, "acc123")
+Check("cloudflare: ...then the question, to that account", t.steps[1].url, AiTrack.CfApi "accounts/acc123/ai/v1/chat/completions")
+CheckHas("cloudflare: ...Vocab's own prompt, thinking low", t.steps[1].opts.body, "understand words they meet on screen", '"reasoning_effort":"low"')
+CheckTrue("cloudflare: the account is kept - with the token's end, not the token", AiTrack.cfAccount = "acc123" && AiTrack.cfFor = "12345678")
+CheckTrue("cloudflare: ...and not in the cache file", !InStr(FileRead(AiTrack.StateFile, "UTF-8"), "cf-token"))
+reply := CfOk(KitJson.Dump(Map("choices", [Map("message", Map("content"
+    , '{"corrected": "", "lemma": "bank", "pos": "noun", "meaning": "the side of a river", "translation": "ساحل", "note": "", "example": ""}'))])))
+got := AiTrack.Answer("word", reply)
+Check("cloudflare: its answer, in OpenAI's shape, is read", got["meaning"] "|" got["persian"], "the side of a river|ساحل")
+t.Got(t.steps[1], reply, got)
+CheckTrue("cloudflare: ...and named on the card", t.done && t.source = "Cloudflare gpt-oss-120b", t.source)
+
+; one side cannot be used: the other is asked, not the end of the lookup
+t := AiTrack({word: "bank", context: "", mode: "word"})
+Check("cloudflare: the account known - straight to the question", t.steps[1].kind, "gen")
+t.Got(t.steps[1], CfFail(401, '{"success": false, "errors": [{"code": 10000, "message": "Authentication error"}]}'), "")
+Check("cloudflare: token turned down - Gemini is asked", t.steps[1].model, "model-a")
+CheckHas("cloudflare: ...and the card says so", t.Waiting, "Cloudflare key rejected, trying model-a")
+AiTrack.cfBad := ""
+t := AiTrack({word: "bank", context: "", mode: "word"})
+t.Got(t.steps[1], Net(403), "")
+Check("cloudflare: not reached - Gemini is asked", t.steps[1].model, "model-a")
+CheckTrue("cloudflare: ...and nothing rests", !AiTrack.resting.Count, AiTrack.resting.Count)
+t := AiTrack({word: "bank", context: "", mode: "word"})
+t.Got(t.steps[1], CfOk('{"choices": [{"message": {"content": null}}]}'), "")
+Check("cloudflare: an answer with nothing in it - Gemini is asked", t.steps[1].model, "model-a")
+IniDelete(VocabIni(), "Gemini", "Model")
+t := AiTrack({word: "bank", context: "", mode: "word"})
+Check("cloudflare: automatic - Gemini first", t.steps[1].model, "model-a")
+t.Got(t.steps[1], Net(403), "")
+Check("gemini: blocked where you are - Cloudflare is asked", t.steps[1].model, CF)
+CheckHas("gemini: ...and the card says so", t.Waiting, "Gemini not reached (HTTP 403 from the network) - check the VPN or proxy, trying Cloudflare GPT-OSS-120B")
+t := AiTrack({word: "bank", context: "", mode: "word"})
+t.Got(t.steps[1], Fail("timed out"), "")
+Check("gemini: slow - Cloudflare next, not the other Gemini", t.steps[1].model, CF)
+AiTrack.resting := Map()
+AiTrack.chain := ["gemini-3.7-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash"]
+t := AiTrack({word: "bank", context: "", mode: "word"})
+t.Got(t.steps[1], Fail("", 503), "")
+Check("gemini: a Flash busy at once - Cloudflare before another Flash", t.steps[1].model, CF)
+AiTrack.chain := ["model-a", "model-b"], AiTrack.resting := Map()
+
+; Cloudflare's own day: midnight UTC
+neurons := CfFail(429, '{"errors": [{"code": 4006, "message": "you have used up your daily free allocation of 10,000 neurons"}]}')
+Check("cloudflare: out of the day's neurons - rests until midnight UTC", AiTrack.CfRestUntil(neurons), SubStr(DateAdd(A_NowUTC, 1, "Days"), 1, 8) "000000")
+AiTrack.resting[CF] := AiTrack.CfRestUntil(neurons)
+CheckHas("cloudflare: ...and says so", AiTrack.Why(CF), "Cloudflare GPT-OSS-120B is out of today's free requests")
+Check("cloudflare: ...and goes last", Join(AiTrack.Models(true, true), ","), "model-a,model-b," CF)
+CheckTrue("cloudflare: a paid-only model is named so", InStr(AiTrack.Said(CF, CfFail(403
+    , '{"errors": [{"message": "AiError: Model is not available on the Workers Free plan", "code": 5035}]}')), "not free"))
+
+; Cloudflare's own list: free, staying, text - the tested one first, then the newest
+AiTrack.resting := Map()                    ; nothing resting from the checks above
+soon := FormatTime(DateAdd(A_NowUTC, 2, "Days"), "yyyy-MM-dd"), later := FormatTime(DateAdd(A_NowUTC, 90, "Days"), "yyyy-MM-dd")
+Mdl(name, created, props*) {
+    p := []
+    for x in props
+        p.Push(Map("property_id", x[1], "value", x[2]))
+    return Map("name", name, "created_at", created, "task", Map("name", "Text Generation"), "properties", p)
+}
+cfl := CfOk(KitJson.Dump(Map("result", [Mdl("@cf/zai-org/glm-5.3", "2026-08-14", ["require_workers_paid", "true"])
+    , Mdl("@cf/meta/llama-3.2-3b-instruct", "2024-09-25", ["planned_deprecation_date", soon])
+    , Mdl("@cf/mistral/mistral-7b-instruct-v0.2-lora", "2024-04-01")
+    , Mdl("@cf/meta/llama-guard-3-8b", "2025-01-22")
+    , Mdl("@cf/qwen/qwen2.5-coder-32b-instruct", "2025-02-27")
+    , Mdl("@cf/google/gemma-2b-it", "2024-04-02", ["beta", "true"])
+    , Mdl("@cf/mistralai/mistral-small-3.1-24b-instruct", "2025-03-18", ["planned_deprecation_date", later])
+    , Mdl("@cf/openai/gpt-oss-120b", "2025-08-05")
+    , Mdl("@cf/qwen/qwen3.8-27b", "2026-08-17")])))
+Check("cloudflare list: only free, staying text models; the tested one first, then the newest", Join(AiTrack.PickCfModels(cfl), ",")
+    , CF ",@cf/qwen/qwen3.8-27b,@cf/mistralai/mistral-small-3.1-24b-instruct")
+CheckTrue("cloudflare list: any of its names can be picked", AiTrack.IsModelName("@cf/qwen/qwen3.8-27b") && !AiTrack.IsModelName("@cf/x") && !AiTrack.IsModelName("@cf/a b/c"))
+Check("cloudflare list: only the tested one is marked so", AiTrack.Tested(CF) "|" AiTrack.Tested("@cf/qwen/qwen3.8-27b") "|" AiTrack.Tested("gemini-3.7-flash"), "1|0|1")
+AiTrack.cfChain := ["@cf/qwen/qwen3.8-27b"]
+Check("cloudflare list: today's list without the tested one - it is not asked by itself", Join(AiTrack.Models(true, true), ","), "model-a,model-b")
+AiTrack.cfChain := [CF, "@cf/qwen/qwen3.8-27b"]
+Check("cloudflare list: ...with it, as before", Join(AiTrack.Models(true, true), ","), "model-a," CF ",model-b")
+AiTrack.cfChain := ""
+
+; your order: up to three picks, then the automatic order
+IniWrite("@cf/qwen/qwen3.8-27b", VocabIni(), "Gemini", "Model")
+IniWrite("model-b", VocabIni(), "Gemini", "Model2")
+Check("picks: not real names are skipped", Join(AiPicks(), ","), "@cf/qwen/qwen3.8-27b")
+IniWrite("gemini-3.5-flash-lite", VocabIni(), "Gemini", "Model2")
+IniWrite("@cf/qwen/qwen3.8-27b", VocabIni(), "Gemini", "Model3")
+Check("picks: in order, each once", Join(AiPicks(), ","), "@cf/qwen/qwen3.8-27b,gemini-3.5-flash-lite")
+Check("picks: lead, then Cloudflare's tested one, then the rest", Join(AiTrack.Models(true, true), ",")
+    , "@cf/qwen/qwen3.8-27b,gemini-3.5-flash-lite," CF ",model-a,model-b")
+Check("picks: ...each only with its side's key", Join(AiTrack.Models(true, false), ","), "gemini-3.5-flash-lite,model-a,model-b")
+t := AiTrack({word: "bank", context: "", mode: "word"})
+Check("picks: the first pick is asked first", t.steps[1].model, "@cf/qwen/qwen3.8-27b")
+t.Got(t.steps[1], neurons, "")
+CheckTrue("picks: Cloudflare's day used up - all its models rest, not one", AiTrack.IsResting(CF) && AiTrack.IsResting("@cf/qwen/qwen3.8-27b"))
+Check("picks: ...and Gemini is asked next", t.steps[1].model, "gemini-3.5-flash-lite")
+AiTrack.resting := Map()
+t := AiTrack({word: "bank", context: "", mode: "word"})
+t.Got(t.steps[1], CfFail(403, '{"errors": [{"message": "AiError: Model is not available on the Workers Free plan", "code": 5035}]}'), "")
+Check("picks: paid only now - rests for the day", AiTrack.resting.Has("@cf/qwen/qwen3.8-27b") && AiTrack.resting["@cf/qwen/qwen3.8-27b"] = AiTrack.QuotaDay(CF), 1)
+AiTrack.resting := Map()
+IniWrite("", VocabIni(), "Gemini", "Model")
+Check("picks: a Then after Automatic is not used", Join(AiPicks(), ","), "")
+IniDelete(VocabIni(), "Gemini", "Model2"), IniDelete(VocabIni(), "Gemini", "Model3"), IniDelete(VocabIni(), "Gemini", "Model")
+
+; Try up to: how many models one lookup asks
+Check("tries: three, unless set", AiTries(), 3)
+IniWrite("9", VocabIni(), "Gemini", "Tries")
+Check("tries: never more than six", AiTries(), 6)
+t := AiTrack({word: "bank", context: "", mode: "word"})
+Check("tries: more models, more time - 15 s each past three", t.budget, 75000)
+IniWrite("2", VocabIni(), "Gemini", "Tries")
+t := AiTrack({word: "bank", context: "", mode: "word"})
+Check("tries: two - the time as before", t.budget, 30000)
+t.Got(t.steps[1], Fail("", 503), "")
+Check("tries: the first busy - the second is asked", t.steps[1].model, CF)
+t.Got(t.steps[1], CfFail(503, '{"errors": [{"code": 3040, "message": "busy"}]}'), "")
+CheckTrue("tries: ...and then it stops, and says so", t.done && InStr(t.note, "2 models asked, none answered"), t.note)
+IniDelete(VocabIni(), "Gemini", "Tries")
+AiTrack.resting := Map()
+
+; when the token ends: asked once, said on the cards only near the end
+Check("token end: read from Cloudflare's answer", AiTrack.CfEndsOf(CfOk('{"result": {"id": "x", "status": "active", "expires_on": "2027-02-14T20:29:59Z"}, "success": true}')), "20270214202959")
+Check("token end: ...none given - it never ends", AiTrack.CfEndsOf(CfOk('{"result": {"id": "x", "status": "active"}, "success": true}')), "never")
+Check("token end: ...or null", AiTrack.CfEndsOf(CfOk('{"result": {"status": "active", "expires_on": null}}')), "never")
+Check("token end: ...a refusal tells nothing", AiTrack.CfEndsOf(CfFail(401, '{"success": false, "errors": [{"code": 1000, "message": "Invalid API Token"}]}')), "")
+Check("token end: the account's address first, then the user's", AiTrack.CfVerifyUrls()[1] "|" AiTrack.CfVerifyUrls()[2]
+    , AiTrack.CfApi "accounts/acc123/tokens/verify|" AiTrack.CfApi "user/tokens/verify")
+Check("token end: shown as your day", AiTrack.LocalDate("20270214120000"), "14 Feb 2027")
+AiTrack.cfEnds := DateAdd(A_NowUTC, 30, "Days")
+Check("token end: a month away - nothing on the cards", AiTrack.CfEndsNote(), "")
+AiTrack.cfEnds := DateAdd(A_NowUTC, 10, "Days")
+CheckHas("token end: under two weeks - one line", AiTrack.CfEndsNote(), "Your Cloudflare token ends on " AiTrack.LocalDate(AiTrack.cfEnds))
+Check("token end: ...not for a different token", AiTrack.CfEndsNote("cf-token-87654321"), "")
+AiTrack.cfEnds := DateAdd(A_NowUTC, -1, "Days")
+CheckHas("token end: over - said so", AiTrack.CfEndsNote(), "Your Cloudflare token ended on")
+AiTrack.cfEnds := "never"
+Check("token end: never ends - nothing", AiTrack.CfEndsNote(), "")
+AiTrack.CfKeep("acc123", "cf-token-12345678")
+Check("token end: the same token again - its end is kept", AiTrack.cfEnds, "never")
+AiTrack.CfKeep("acc999", "cf-token-87654321")
+Check("token end: a new token - not known yet", AiTrack.cfEnds, "")
+CheckHas("token end: ...and kept in the cache file", FileRead(AiTrack.StateFile, "UTF-8"), '"ends"')
+Check("token end: the test's words", CloudflareRow.EndsText("never") "|" CloudflareRow.EndsText("20270214120000") "|" CloudflareRow.EndsText("")
+    , ", and it never ends.| - until 14 Feb 2027.|.")
+AiTrack.cfEnds := ""
+AiTrack.cfAccount := "acc123", AiTrack.cfFor := "12345678"
+AiTrack.resting := Map("model-b", AiTrack.NextQuotaDay())
+t := AiTrack({word: "bank", context: "", mode: "word"})
+CheckHas("resting: a Gemini model out of quota - the card says why another leads", t.Waiting, "model-a - model-b is out of today's free requests")
+IniWrite(CF, VocabIni(), "Gemini", "Model")
+t := AiTrack({word: "bank", context: "", mode: "word"})
+Check("resting: ...but not when the one leading was picked in Settings", t.Waiting, "asking Cloudflare" Chr(0x2026))
+IniDelete(VocabIni(), "Gemini", "Model")
+AiTrack.resting := Map(), AiTrack.cfAccount := "", AiTrack.cfFor := "", AiTrack.cfBad := "", AiTrack.cfEnds := ""
+IniDelete(VocabIni(), "Cloudflare", "Token")
+try FileDelete(AiTrack.StateFile)
 IniDelete(VocabIni(), "Gemini", "ApiKey")
 AiTrack.chain := "", AiTrack.resting := Map(), AiTrack.listed := ""
 
@@ -758,7 +945,11 @@ Check("theme: the border colour, as Windows wants it", Format("0x{:06X}", Border
 ; the settings window, built but never shown: every row, every key, the key box
 KitStartup.Dir := A_Temp, KitStartup.Folder := "\VocabTest" A_TickCount
 IniWrite("test-key-123", VocabIni(), "Gemini", "ApiKey")
+IniWrite("cf-token-123", VocabIni(), "Cloudflare", "Token")
+IniWrite("flash", VocabIni(), "Gemini", "Model")
 IniWrite("1", VocabIni(), "Translation", "Sentences")
+AiTrack.chain := ["gemini-3.7-flash", "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-flash-latest"]
+AiTrack.loaded := true, AiTrack.listed := FormatTime(, "yyyyMMdd")       ; no list request
 KitSettings.Build()
 KitSettings.Sync()
 texts := ""
@@ -779,7 +970,43 @@ Check("settings window: the passage as saved", TranslateScope(), 1)
 GeminiRow.key.Value := " another-key "
 GeminiRow.Save()
 Check("settings window: a key typed is saved, trimmed", IniRead(VocabIni(), "Gemini", "ApiKey", ""), "another-key")
+CheckHas("settings window: the Cloudflare row", texts, "Cloudflare token", "get a free token", "Ask first", "Then", "Try up to")
+Check("settings window: the token box shows the saved token", CloudflareRow.key.Value, "cf-token-123")
+Check("settings window: the models to pick from, newest first, Cloudflare last", Join(ModelRow.values, ",")
+    , ",gemini-3.7-flash,gemini-3.6-flash,gemini-3.5-flash-lite,gemini-flash-latest," AiTrack.CfModel)
+Check("settings window: a model typed by hand that does not exist shows as automatic", ModelRow.box.Value, 1)
+ModelRow.box.Value := ModelRow.values.Length
+ModelRow.Pick()
+Check("settings window: a model picked is saved", IniRead(VocabIni(), "Gemini", "Model", ""), AiTrack.CfModel)
+Check("settings window: three lists, always", ModelRow.boxes.Length, 3)
+Check("settings window: ...the others at automatic from here", ModelRow.boxes[2].Text, "Automatic from here")
+Check("settings window: ...the third grey until the second is picked", ModelRow.boxes[2].Enabled "|" ModelRow.boxes[3].Enabled, "1|0")
+AiTrack.cfChain := [AiTrack.CfModel, "@cf/qwen/qwen3.8-27b"]
+ModelRow.Fill()
+ModelRow.boxes[2].Value := ModelRow.vals[2].Length
+ModelRow.Pick(2)
+Check("settings window: the second pick is saved as Model2", IniRead(VocabIni(), "Gemini", "Model2", ""), "@cf/qwen/qwen3.8-27b")
+Check("settings window: ...marked not tested", ModelRow.tags[2].Text, "not tested")
+CheckHas("settings window: ...and why, under it", ModelRow.noteBox.Text, "check its answers in your language")
+Check("settings window: the tested one says so", ModelRow.Name(AiTrack.CfModel), "Cloudflare GPT-OSS-120B  (tested)")
+KitSettings.Drop(), KitSettings.Build(), KitSettings.Sync()
+Check("settings window: a saved second pick shows again", ModelRow.boxes[2].Text, "Cloudflare qwen3.8-27b")
+Check("settings window: ...in use, under a pick", ModelRow.boxes[2].Enabled "|" ModelRow.boxes[3].Enabled, "1|1")
+ModelRow.box.Value := 1
+ModelRow.Pick(1)
+Check("settings window: first back to automatic - the second goes grey", ModelRow.boxes[2].Enabled "|" Join(AiPicks(), ","), "0|")
+ModelRow.tries.Value := "4"
+ModelRow.SaveTries()
+Check("settings window: Try up to is saved", AiTries(), 4)
+IniDelete(VocabIni(), "Gemini", "Model"), IniDelete(VocabIni(), "Gemini", "Model2"), IniDelete(VocabIni(), "Gemini", "Tries")
+AiTrack.cfChain := ""
+ModelRow.Fill()
+CloudflareRow.key.Value := ""
+CloudflareRow.Save()
+CheckTrue("settings window: no token - Cloudflare leaves the list", !HasVal(ModelRow.values, AiTrack.CfModel), Join(ModelRow.values, ","))
 KitSettings.Drop()
 IniDelete(VocabIni(), "Gemini", "ApiKey"), IniDelete(VocabIni(), "Translation", "Sentences")
+IniDelete(VocabIni(), "Gemini", "Model"), IniDelete(VocabIni(), "Cloudflare", "Token")
+AiTrack.chain := "", AiTrack.listed := ""
 
 Done()

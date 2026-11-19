@@ -11,7 +11,7 @@
 ; the notices and the update check. The files keep the short name Vocab.
 global AppName := "TLDR Vocab"
 global RepoUrl := "https://github.com/HamedGhadirian/TLDR-Vocab"     ; the README and the releases
-global VocabVersion := "1.4.1"   ; MAJOR.MINOR.PATCH - a dash makes it a test version
+global VocabVersion := "1.5.0"   ; MAJOR.MINOR.PATCH - a dash makes it a test version
 
 ;--------------------------------------------------------------------------------
 ; The keys - the defaults. Every one can be changed in Settings > KEYS (the
@@ -50,13 +50,13 @@ VocabRows() {
             , choices: ["10", "1"], names: ["up to ten sentences", "only the one sentence"]
             , hint: "What Translate takes: the sentences around the one you click, or just that one, "
                 . "up to its first stop."}
-        , {kind: "head", label: "GEMINI"}
-        , {kind: "note", label: "Explains sentences in plain English, writes the summaries, and picks the "
-            . "meaning of a word that fits where you found it. Without a key, the dictionary, the "
-            . "translation and the pronunciation all still work."}
+        , {kind: "head", label: "AI"}
+        , {kind: "note", label: "Explains sentences, writes the summaries, checks your English and picks the "
+            . "meaning that fits. One free key is enough; with both, each stands in when the other is slow or "
+            . "blocked. Without one, the dictionary and the translation still work."}
         , {kind: "custom", add: (c, y) => GeminiRow.Add(c, y), sync: () => GeminiRow.Sync()}
-        , {kind: "text", sect: "Gemini", key: "Model", def: "", label: "Model"
-            , cue: "automatic - newest free Flash, the next when its quota runs out"}
+        , {kind: "custom", add: (c, y) => CloudflareRow.Add(c, y), sync: () => CloudflareRow.Sync()}
+        , {kind: "custom", add: (c, y) => ModelRow.Add(c, y), sync: () => ModelRow.Sync()}
         ; WinHTTP, which every request goes through, speaks to HTTP proxies
         ; only: a VPN app's HTTP port works, its SOCKS port does not
         , {kind: "head", label: "NETWORK"}
@@ -78,14 +78,27 @@ VocabIniTemplate() {
 ; in this file is there.
 
 [Gemini]
-; Optional, free: Gemini explains sentences in plain English, writes the
+; Optional, free: an AI explains sentences in plain English, writes the
 ; summaries, and picks the meaning of a word that fits the sentence. Without
-; it the dictionary, the translation and the pronunciation all still work.
-; Get a key at https://aistudio.google.com/apikey (sign in with Google,
-; Create API key) and paste it after the = , or in Settings.
+; one the dictionary, the translation and the pronunciation all still work.
+; Either Gemini or Cloudflare (below) is enough; with both, each stands in
+; for the other. Get a Gemini key at https://aistudio.google.com/apikey
+; (sign in with Google, Create API key) and paste it after the = , or in Settings.
 ApiKey=
-; Leave empty to use the newest free Flash model automatically.
+; The models to ask first, Gemini's or Cloudflare's, in this order - easiest
+; picked from the lists in Settings. Empty = automatic. After them, the
+; automatic order: the newest Flash, Cloudflare, then the rest.
 Model=
+Model2=
+Model3=
+; How many models one lookup asks before it gives up: 1 to 6.
+Tries=3
+
+[Cloudflare]
+; Optional, free: a Cloudflare Workers AI token. At
+; https://dash.cloudflare.com/profile/api-tokens press Create Token, use the
+; Workers AI template, and paste the token after the = , or in Settings.
+Token=
 
 [Network]
 ; auto = follow the Windows proxy when one is switched on (a VPN app in

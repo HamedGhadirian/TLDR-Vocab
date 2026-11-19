@@ -2,6 +2,25 @@
 
 Each version's notes. The release on GitHub is built from the section with its number.
 
+## 1.5.0 — 2026-11-19
+
+- **Cloudflare as a second AI**: paste a free Cloudflare Workers AI token in Settings and the explanations, summaries and Check my English work even where Gemini is blocked or busy. One key is enough; with both, each stands in for the other.
+- **Your own model order**: pick the models to ask first from lists — Gemini's and Cloudflare's free ones, kept up to date by themselves — and how many to try before giving up. Cloudflare models Vocab hasn't tested are marked so: check their answers in your language.
+- **Faster when Gemini is slow**: Cloudflare is asked right after the first Gemini model that doesn't answer, so a lookup waits once, not twice.
+- **Knows when your Cloudflare token ends**: **test** says until when it works, and in its last two weeks the cards remind you.
+- **Fixed**: after Vocab had run for a day or so, the card could open behind the browser — you heard the word but saw nothing until you reloaded.
+
+<details>
+<summary><b>More</b> (5)</summary>
+
+- **Shorter AI settings**: both keys, the model lists, Try up to and the test result fit in one section.
+- **Ask first, Then, Then**: after your picks comes the automatic order. "Automatic from here" takes a pick away. **Try up to** (1 to 6, 3 unless you change it) is how many models one lookup asks.
+- Cloudflare's lists only offer models that are free and not about to be retired. When the day's free allowance is used up, all Cloudflare models rest until midnight UTC, so no try is wasted on them.
+- A model name typed by hand that doesn't exist is ignored, and no longer slows every lookup down.
+- **Fixed**: with Global Scroller's touch drag (Win + Shift + click), a second drag could look up a word as if it were Win + click. A click key now counts only when no other Ctrl, Alt, Shift or Win is really held.
+
+</details>
+
 ## 1.4.1 — 2026-11-14
 
 - **Translate and Summary moved to the middle button**: **Shift + Win + middle-click** translates, **Ctrl + Win + middle-click** summarises. The left-click ones are Global Scroller's keys now, so the two apps can run side by side. If you never changed these keys, the new ones replace the old; the old ones still work if you set them in Settings → Keys. **Win + click** for a word is the same as before.

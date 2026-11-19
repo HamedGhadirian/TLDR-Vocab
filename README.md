@@ -68,9 +68,19 @@ Tray icon > **Settings**. Everything is saved the moment you change it and works
 - **General**: dark or light theme, Start with Windows, Run as administrator, the update check.
 - **Keys**: click **change** next to one and press the keys you want.
 - **Translation**: the language, and how much Translate takes.
-- **Gemini** (optional, free): without a key, words, translations and pronunciation all work. With one
+- **AI** (optional, free): without a key, words, translations and pronunciation all work. With one
   you also get sentences explained, summaries, the meaning that fits the sentence and Check my English.
-  Click **get a free key**, sign in with Google, paste it, click **test**. The key stays on your PC.
+  One key is enough, either of these two; with both, each one stands in when the other is slow or blocked:
+  - **Gemini**: click **get a free key**, sign in with Google, paste it, click **test**.
+  - **Cloudflare** (works where Gemini is blocked): click **get a free token**, sign up, press
+    **Create Token**, use the **Workers AI** template, paste it, click **test**. A token can have an
+    end date; **test** shows it, and the cards remind you in its last two weeks.
+  - **Ask first**: leave it on Automatic, or pick the model to ask first. The two **Then** lists take
+    a second and a third ("Automatic from here" takes one away); after them comes the automatic order. The lists update themselves. Cloudflare
+    models marked **not tested** may answer wrongly in some languages without any error, so check them.
+  - **Try up to**: how many models one lookup asks before it gives up (3 unless you change it).
+
+  Keys stay on your PC.
 - **Network**: an HTTP proxy, if you need one. **Sound**: say each word out loud.
 
 It's all in `Vocab.ini` beside the script too, if you'd rather edit a file.
@@ -81,7 +91,7 @@ It's all in `Vocab.ini` beside the script too, if you'd rather edit a file.
 
 - **Where the answers come from**: freedictionaryapi.com, Wiktionary and Datamuse for definitions;
   Google Translate's free web addresses (with Lingva and MyMemory as fallbacks) for translations and
-  the spoken words; Gemini, with your key, for explanations. The Google addresses aren't an official
+  the spoken words; Gemini or Cloudflare Workers AI, with your key, for explanations. The Google addresses aren't an official
   service, so they could change one day - the fallbacks take over.
 - **Updates**: once a day it asks GitHub whether there's a newer version. **Update now** swaps the files
   in about ten seconds and keeps your words and settings; the old version stays in `previous version\`.

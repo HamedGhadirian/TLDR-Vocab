@@ -356,6 +356,70 @@ The first design, kept for its history:
 - **The daily check's date** moved out of `Vocab.ini` into the temp folder:
   it means nothing on another PC. An old `LastUpdateCheck` line is left alone.
 
+## Cloudflare beside Gemini (1.5.0)
+
+- **Why a second AI.** Gemini is blocked in some countries (Iran: a VPN is
+  needed), and in November 2026 its Flash models often timed out or said
+  "busy". Test of 2026-11-16, Vocab's own prompts, 13 items (7 words with
+  slang, a dark meaning, OCR damage; 3 sentences; a summary; 2 English
+  checks), through a VPN: Gemini Flash answered 2 of 13 (9 timed out at
+  60 s); Cloudflare's GPT-OSS-120B answered 13 of 13 in 1 to 3 s, every
+  meaning right, Persian natural with correct half-spaces; Llama 3.3 70B
+  answered as fast but gave "executed" as اجرا شد, wrote half a sentence in
+  German, put Chinese words into Persian and lost half-spaces. So
+  GPT-OSS-120B, by name (`AiTrack.CfModel`).
+- **Others tried and dropped.** GitHub Models answers every request with a
+  bare "OK" from Iran and from a Ukrainian VPN address - a block, not a
+  service. Groq answers `{"error": {"message": "Forbidden"}}` from Iran.
+  Cloudflare's own newest models (DeepSeek V4, Kimi, GLM 5.3) are not on the
+  free plan; its "Third-party" ones (Gemini, Claude) are paid.
+- **Cost.** About 360 tokens in and 160 out a lookup; the free plan's
+  10,000 neurons a day are a few hundred lookups. Out of them: Cloudflare
+  says 429, and the model rests until midnight UTC, when its day starts again.
+- **The order.** Gemini's leading Flash first, Cloudflare second, the rest
+  of Gemini after: a slow Flash costs one wait, then Cloudflare answers in
+  seconds. A Flash that says no at once is no longer followed by another
+  Flash while Cloudflare is still there to ask. Picked in Settings > Model,
+  Cloudflare goes first.
+- **One side down is not the end.** Its key turned down, Gemini "not offered
+  in your region", a block page or a VPN's own error: that side's models are
+  dropped for this lookup and the other side is asked. Before, any of these
+  ended the lookup.
+- **One field, not two.** Cloudflare's address needs the account id; the
+  token alone can ask for it (`accounts`), so it is asked once and kept in
+  `cache\gemini.json` with the token's last 8 characters - never the token.
+- **Settings stay short.** "GEMINI" became "AI": two key rows of two lines,
+  the model, and one shared line for what "test" found. Model became a list:
+  the old box let people type "flash", which is no model, so every lookup
+  asked for it first and failed - and its 404 wiped the day's model list
+  each time, so automatic was guessing too. A name typed by hand that is not
+  a real one is now ignored (`GeminiModel`), and a 404 from a picked model
+  no longer throws away the list.
+- **Your own order, built up a step at a time** (2026-11-19). Not a list of
+  every model to sort - with more services later that would grow without
+  end - but up to three picks ("Ask first", "Then", "Then"), after
+  which the automatic order goes on, and "Try up to" (1-6, default 3): how
+  many models one lookup asks before it gives up. People with a different
+  network or VPN can lead with the side that works for them. The time for a
+  lookup stays 30 s up to three models and grows 15 s for each past that.
+  A "Then" after "Automatic" is not used (and shows grey) - it would
+  otherwise be asked first, which is not what the window says. All three
+  lists are always there: an "+ add another" link came first, but nothing
+  took a list away again; "Automatic from here" does that now.
+- **Cloudflare's list from Cloudflare, filtered.** Its model list says, per
+  model, `require_workers_paid` and `planned_deprecation_date`, so the menus
+  offer only free models that are staying - no need to try each. On
+  2026-11-19: 41 text models, 9 paid-only, 13 retired the next day; with
+  add-ons (lora), betas, alphas, the safety checker and the coding models
+  dropped, 18 left. Fetched once a day, like Gemini's.
+- **Only the tested one is asked unpicked.** The others are for people
+  reading other languages and with other needs, so they can be picked - but
+  marked "not tested", with a line on why. Asked live the same day, Mistral
+  Small answered in 2 s and put "bank" (of a river) as کف دریا (the seabed):
+  wrong, with no error to show it. Qwen 3.8 thought past 14 s and the
+  connection dropped. Automatic leaves GPT-OSS-120B out too if the day's list
+  no longer has it (retired, or paid now).
+
 ## Removed on purpose
 
 - **The setting that hid the speaker button.** The button is always there now; a switch to hide one

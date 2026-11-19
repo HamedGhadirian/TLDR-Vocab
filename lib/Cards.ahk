@@ -338,11 +338,11 @@ RenderLookup(g, W, st, owner) {
     if (lemma != "" && Lookup.Norm(lemma) != Lookup.Norm(st.word))
         f.Text(Chr(0x2192) " " lemma, CMuted, "s9 Norm")
     if (st.HasProp("misread") && st.misread != "")
-        f.Text("the screen read " Chr(0x201C) st.misread Chr(0x201D) ", Gemini corrected it"
+        f.Text("the screen read " Chr(0x201C) st.misread Chr(0x201D) ", " (lk ? lk.ai.Who : "Gemini") " corrected it"
             , CAmber, "s8 Norm Italic")
 
     if (lk && lk.ai.enabled) {
-        f.Label((st.context != "") ? "IN THIS SENTENCE" : "GEMINI", CBlue)
+        f.Label((st.context != "") ? "IN THIS SENTENCE" : StrUpper(lk.ai.Who), CBlue)
         if (st.context != "") {         ; the sentence itself - Gemini's tidied copy once it has one
             ex := (lk.ai.data && Dig(lk.ai.data, "example") != "") ? lk.ai.data["example"] : st.context
             f.Text(Chr(0x201C) ex Chr(0x201D), CMuted, "s8 Norm Italic", "", 5)
@@ -359,7 +359,8 @@ RenderLookup(g, W, st, owner) {
         } else if KeyTrouble(lk)
             NoKeyLine(f, lk)
         else
-            f.Text("Gemini: " lk.ai.note, CDim, "s8 Norm Italic")
+            f.Text(lk.ai.Who ": " lk.ai.note, CDim, "s8 Norm Italic")
+        CfEndsLine(f, lk)
     }
 
     f.Label(Lang.Label())
@@ -420,7 +421,7 @@ RenderLookup(g, W, st, owner) {
         }
         ; the word card works whole without Gemini, so only a quiet line
         if !lk.ai.enabled
-            Link(f.Text("Gemini is off: add a free key for the meaning that fits the sentence"
+            Link(f.Text("AI is off: add a free key for the meaning that fits the sentence"
                 , CDim, "s7 Norm"), (*) => GeminiKeyBox())
     }
     return f.y + 8

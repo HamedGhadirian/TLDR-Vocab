@@ -214,7 +214,8 @@ RenderParagraph(g, W, st, owner) {
     else if KeyTrouble(lk)
         NoKeyLine(f, lk)
     else
-        f.Text("Gemini: " lk.ai.note, CDim, "s8 Norm Italic")
+        f.Text(lk.ai.Who ": " lk.ai.note, CDim, "s8 Norm Italic")
+    CfEndsLine(f, lk)
     ; too long a text was cut at SummaryMaxChars - say so where the summary is
     if (st.HasProp("cut") && st.cut)
         f.Text("The text was long: this covers only its first part, down to the end of WHAT IT READ.", CAmber, "s8 Norm")

@@ -266,7 +266,8 @@ RenderSentence(g, W, st, owner) {
     else if KeyTrouble(lk)
         NoKeyLine(f, lk)
     else
-        f.Text("Gemini: " lk.ai.note, CDim, "s8 Norm Italic")
+        f.Text(lk.ai.Who ": " lk.ai.note, CDim, "s8 Norm Italic")
+    CfEndsLine(f, lk)
 
     f.Label(Lang.Label())
     if (ai && Dig(ai, "persian") != "")

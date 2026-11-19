@@ -144,6 +144,14 @@ class PopupCard {
             else
                 ch := this.pane.Build(this.w, (g, W) => RenderLookup(g, W, this.st, this))
             h := Min(ch, st.lockH ? st.lockH : this.capH)
+            ; Back to the front of the always-on-top windows each time it
+            ; opens. The flag alone is not enough: after a day or so of other
+            ; windows coming and going, the hidden card sank below ordinary
+            ; ones - it opened behind the browser, heard but not seen, until a
+            ; reload made a new one. Never activates. See OsdTopmost in the kit.
+            if !this.visible
+                DllCall("SetWindowPos", "ptr", this.g.Hwnd, "ptr", -1       ; HWND_TOPMOST
+                    , "int", 0, "int", 0, "int", 0, "int", 0, "uint", 0x13)  ; NOSIZE|NOMOVE|NOACTIVATE
             if (this.isPinned && this.visible) {    ; where it was put, only its height changes
                 WinGetPos(&x, &y, , , this.g.Hwnd)
                 this.g.Show("NoActivate x" x " y" y " w" this.w " h" h)
